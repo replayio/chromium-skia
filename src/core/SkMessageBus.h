@@ -17,6 +17,8 @@
 #include "include/private/SkTArray.h"
 #include "include/private/SkTDArray.h"
 
+#include "src/core/SkRecordReplay.h"
+
 /**
  * The following method must have a specialization for type 'Message':
  *
@@ -82,10 +84,15 @@ private:
 
 template <typename Message, typename IDType, bool AllowCopyableMessage>
 SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::Inbox(IDType uniqueID)
-        : fUniqueID(uniqueID) {
+        : fMessagesMutex("SkMessageBus::Inbox.fMessagesMutex"),
+          fUniqueID(uniqueID) {
     // Register ourselves with the corresponding message bus.
     auto* bus = SkMessageBus<Message, IDType, AllowCopyableMessage>::Get();
     SkAutoMutexExclusive lock(bus->fInboxesMutex);
+
+    SkRecordReplayAssert(
+        "[RUN-593-1883] SkMessageBus::Inbox::Inbox %d", (int)bus->fInboxes.size());
+
     bus->fInboxes.push_back(this);
 }
 
@@ -115,19 +122,26 @@ void SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::poll(
     SkASSERT(messages);
     messages->clear();
     SkAutoMutexExclusive lock(fMessagesMutex);
+    SkRecordReplayAssert("[RUN-593-1863] SkMessageBus::Inbox::poll %d %d",
+                         (int)fMessages.size(),
+                         (int)messages->size());
     fMessages.swap(*messages);
 }
 
 //   ----------------------- Implementation of SkMessageBus -----------------------
 
 template <typename Message, typename IDType, bool AllowCopyableMessage>
-SkMessageBus<Message, IDType, AllowCopyableMessage>::SkMessageBus() = default;
+SkMessageBus<Message, IDType, AllowCopyableMessage>::SkMessageBus()
+  : fInboxesMutex("SkMessageBus.fInboxesMutex") {}
 
 template <typename Message, typename IDType, bool AllowCopyableMessage>
 /*static*/ void SkMessageBus<Message, IDType, AllowCopyableMessage>::Post(Message m) {
     auto* bus = SkMessageBus<Message, IDType, AllowCopyableMessage>::Get();
     SkAutoMutexExclusive lock(bus->fInboxesMutex);
     for (int i = 0; i < bus->fInboxes.size(); i++) {
+        SkRecordReplayAssert("[RUN-593-1801] SkMessageBus::Post %d %d",
+                             i,
+                             (int)bus->fInboxes.size());
         if (SkShouldPostMessageToBus(m, bus->fInboxes[i]->fUniqueID)) {
             if constexpr (AllowCopyableMessage) {
                 bus->fInboxes[i]->receive(m);
