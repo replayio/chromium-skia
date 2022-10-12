@@ -104,15 +104,20 @@ SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::~Inbox() {
     // This is a cheaper fInboxes.remove(fInboxes.find(this)) when order doesn't matter.
     for (int i = 0; i < bus->fInboxes.size(); i++) {
         if (this == bus->fInboxes[i]) {
+            SkRecordReplayAssert("[RUN-593-1883] SkMessageBus::Inbox::~Inbox A %d %d", i,
+                                 (int)bus->fInboxes.size());
             bus->fInboxes.removeShuffle(i);
             break;
         }
     }
+    SkRecordReplayAssert(
+            "[RUN-593-1883] SkMessageBus::Inbox::~Inbox B %d", (int)bus->fInboxes.size());
 }
 
 template <typename Message, typename IDType, bool AllowCopyableMessage>
 void SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::receive(Message m) {
     SkAutoMutexExclusive lock(fMessagesMutex);
+    SkRecordReplayAssert("[RUN-593-1863] SkMessageBus::Inbox::receive %d", (int)fMessages.size());
     fMessages.push_back(std::move(m));
 }
 

@@ -27,6 +27,9 @@ uint32_t SkNextID::ImageID() {
     do {
         id = nextID.fetch_add(2, std::memory_order_relaxed);
     } while (id == 0);
+
+    id = SkRecordReplayValue("SkNextID::ImageID", id);
+
     return id;
 }
 
@@ -76,6 +79,9 @@ uint32_t SkPixelRef::getGenerationID() const {
         // We can't quite SkASSERT(this->genIDIsUnique()). It could be non-unique
         // if we got here via the else path (pretty unlikely, but possible).
     }
+
+    SkRecordReplayAssert("[RUN-593-1863] SkPixelRef::getGenerationID %u", id);
+
     return id & ~1u;  // Mask off bottom unique bit.
 }
 
