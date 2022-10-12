@@ -15,6 +15,7 @@
 #include "include/private/SkTemplates.h"
 
 #include "src/core/SkImageFilterTypes.h"
+#include <atomic>
 
 class GrFragmentProcessor;
 class GrRecordingContext;
@@ -116,6 +117,10 @@ public:
     MatrixCapability getCTMCapability() const;
 
     uint32_t uniqueID() const { return fUniqueID; }
+
+    // Called by the global SkImageFilterCache when it caches a result for this filter, so
+    // ~SkImageFilter_Base can skip that cache entirely when it holds nothing to purge.
+    void notifyAddedToCache() const { fAddedToCache.store(true); }
 
     static SkFlattenable::Type GetFlattenableType() {
         return kSkImageFilter_Type;
@@ -433,6 +438,7 @@ private:
     bool fUsesSrcInput;
     CropRect fCropRect;
     uint32_t fUniqueID; // Globally unique
+    mutable std::atomic<bool> fAddedToCache{false};
 
     using INHERITED = SkImageFilter;
 };
