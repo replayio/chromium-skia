@@ -29,6 +29,7 @@
 #include "src/core/SkImagePriv.h"
 #include "src/core/SkMipmap.h"
 #include "src/core/SkNextID.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkSpecialImage.h"
 #include "src/image/SkImage_Base.h"
 #include "src/shaders/SkImageShader.h"
