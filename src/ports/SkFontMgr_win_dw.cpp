@@ -32,6 +32,8 @@
 #include <dwrite_2.h>
 #include <dwrite_3.h>
 
+#include "src/core/SkRecordReplay.h"
+
 using namespace skia_private;
 
 namespace {
@@ -109,6 +111,7 @@ public:
         , fFontCollection(SkRefComPtr(fontCollection))
         , fLocaleName(localeNameLength)
         , fDefaultFamilyName(defaultFamilyNameLength)
+        , fTFCacheMutex("SkFontMgr_DirectWrite")
     {
         memcpy(fLocaleName.get(), localeName, localeNameLength * sizeof(WCHAR));
         memcpy(fDefaultFamilyName.get(), defaultFamilyName, defaultFamilyNameLength*sizeof(WCHAR));

@@ -682,6 +682,7 @@ public:
             , fSysroot(reinterpret_cast<const char*>(FcConfigGetSysRoot(fFC)))
             , fFamilyNames(GetFamilyNames(fFC))
             , fScanner(std::move(scanner))
+            , fTFCacheMutex("SkFontMgr_fontconfig")
             , fFallbackSets(64) {
         SkASSERT(fScanner);
     }
