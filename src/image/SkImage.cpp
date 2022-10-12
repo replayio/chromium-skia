@@ -644,6 +644,7 @@ bool SkImage::readPixels(const SkPixmap& pmap, int srcX, int srcY, CachingHint c
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 sk_sp<SkImage> SkImage::MakeFromBitmap(const SkBitmap& bm) {
+    SkRecordReplayAssert("[RUN-593-1863] SkImage::MakeFromBitmap %d", !!bm.pixelRef());
     if (!bm.pixelRef()) {
         return nullptr;
     }
