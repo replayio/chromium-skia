@@ -707,7 +707,8 @@ public:
         : fFC(config ? config : FcInitLoadConfigAndFonts())
         , fSysroot(reinterpret_cast<const char*>(FcConfigGetSysRoot(fFC)))
         , fFamilyNames(GetFamilyNames(fFC))
-        , fScanner(std::move(scanner)) {
+        , fScanner(std::move(scanner))
+        , fTFCacheMutex("SkFontMgr_fontconfig") {
             SkASSERT(fScanner);
         }
 
