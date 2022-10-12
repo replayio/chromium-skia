@@ -14,6 +14,7 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
+#include "src/core/SkRecordReplay.h"
 
 #include <atomic>
 #include <cstddef>
@@ -26,6 +27,7 @@ static int32_t next_generation_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == 0);
+    SkRecordReplayAssert("[RUN-593-1969] next_generation_id %d", id);
     return id;
 }
 
