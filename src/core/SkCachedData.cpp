@@ -78,6 +78,8 @@ void SkCachedData::internalUnref(bool fromCache) const {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SkCachedData::inMutexRef(bool fromCache) {
+    SkRecordReplayAssert(
+            "[RUN-2367-2368] SkCachedData::inMutexRef %d %d %d", fRefCnt, fInCache, fromCache);
     if ((1 == fRefCnt) && fInCache) {
         this->inMutexLock();
     }
@@ -90,6 +92,8 @@ void SkCachedData::inMutexRef(bool fromCache) {
 }
 
 bool SkCachedData::inMutexUnref(bool fromCache) {
+    SkRecordReplayAssert(
+            "[RUN-2367-2368] SkCachedData::inMutexUnref %d %d %d", fRefCnt, fInCache, fromCache);
     switch (--fRefCnt) {
         case 0:
             // we're going to be deleted, so we need to be unlocked (for DiscardableMemory)
@@ -123,6 +127,8 @@ void SkCachedData::inMutexLock() {
 
     SkASSERT(!fIsLocked);
     fIsLocked = true;
+
+    SkRecordReplayAssert("[RUN-2367-2368] SkCachedData::inMutexLock %d", (int)fStorageType);
 
     switch (fStorageType) {
         case kMalloc_StorageType:

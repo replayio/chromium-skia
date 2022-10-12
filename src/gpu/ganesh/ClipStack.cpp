@@ -71,6 +71,8 @@
 #include <tuple>
 #include <utility>
 
+#include "src/core/SkRecordReplay.h"
+
 class GrOp;
 struct GrShaderCaps;
 
@@ -240,6 +242,7 @@ uint32_t next_gen_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id < kFirstUnreservedGenID);
+    SkRecordReplayAssert("[RUN-593-1969] ClipStack/next_gen_id %u", id);
     return id;
 }
 
