@@ -12,6 +12,7 @@
 #include "src/base/SkVx.h"
 #include "src/core/SkPathPriv.h"
 #include "src/core/SkRRectPriv.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkRectPriv.h"
 #include "src/core/SkTaskGroup.h"
 #include "src/gpu/ganesh/GrClip.h"
@@ -200,6 +201,7 @@ uint32_t next_gen_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id < kFirstUnreservedGenID);
+    SkRecordReplayAssert("[RUN-593-1969] ClipStack/next_gen_id %u", id);
     return id;
 }
 

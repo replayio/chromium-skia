@@ -34,6 +34,8 @@ class SkPaint;
 class GrSurfaceCharacterization;
 namespace skgpu { namespace graphite { class Recorder; } }
 
+#include "src/core/SkRecordReplay.h"
+
 SkSurfaceProps::SkSurfaceProps() : fFlags(0), fPixelGeometry(kUnknown_SkPixelGeometry) {}
 
 SkSurfaceProps::SkSurfaceProps(uint32_t flags, SkPixelGeometry pg)
@@ -59,6 +61,7 @@ SkSurface::SkSurface(const SkImageInfo& info, const SkSurfaceProps* props)
 uint32_t SkSurface::generationID() {
     if (0 == fGenerationID) {
         fGenerationID = asSB(this)->newGenerationID();
+        SkRecordReplayAssert("[RUN-593-1969] SkSurface::generationID %u", fGenerationID);
     }
     return fGenerationID;
 }

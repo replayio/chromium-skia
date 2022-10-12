@@ -7,6 +7,7 @@
 
 #include "src/gpu/ganesh/GrRenderTask.h"
 
+#include "src/core/SkRecordReplay.h"
 #include "src/gpu/ganesh/GrAttachment.h"
 #include "src/gpu/ganesh/GrRenderTarget.h"
 #include "src/gpu/ganesh/GrRenderTargetProxy.h"
@@ -19,6 +20,7 @@ uint32_t GrRenderTask::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrRenderTask::CreateUniqueID %u", id);
     return id;
 }
 
