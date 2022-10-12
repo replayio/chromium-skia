@@ -582,8 +582,9 @@ FcPattern* SkFontConfigInterfaceDirect::MatchFont(FcFontSet* font_set,
       if (acceptable_substitute)
         break;
     }
-    if (!acceptable_substitute)
+    if (!acceptable_substitute) {
       return nullptr;
+    }
   }
 
   return match;
