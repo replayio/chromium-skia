@@ -10,6 +10,7 @@
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/base/SkDebug.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/gpu/ganesh/GrDirectContextPriv.h"
 #include "src/gpu/ganesh/GrGpu.h"
 #include "src/gpu/ganesh/GrGpuResourcePriv.h"
@@ -213,6 +214,7 @@ uint32_t GrGpuResource::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrGpuResource::CreateUniqueID %u", id);
     return id;
 }
 

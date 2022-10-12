@@ -9,6 +9,7 @@
 
 #include "include/core/SkTextureCompressionType.h"
 #include "include/private/chromium/GrSurfaceCharacterization.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/gpu/ganesh/GrBaseContextPriv.h"
 #include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/ganesh/GrContextThreadSafeProxyPriv.h"
@@ -25,6 +26,7 @@ static uint32_t next_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidGenID);
+    SkRecordReplayAssert("[RUN-593-1969] GrContextThreadSafeProxy/next_id %d", id);
     return id;
 }
 
