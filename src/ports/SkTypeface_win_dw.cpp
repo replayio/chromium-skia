@@ -33,6 +33,8 @@
 #include "src/utils/win/SkDWrite.h"
 #include "src/utils/win/SkDWriteFontFileStream.h"
 
+#include "src/core/SkRecordReplay.h"
+
 HRESULT DWriteFontTypeface::initializePalette() {
     if (!fIsColorFont) {
         return S_OK;
@@ -256,6 +258,10 @@ SkTypeface::LocalizedStrings* DWriteFontTypeface::onCreateFamilyNameIterator() c
 }
 
 bool DWriteFontTypeface::onGlyphMaskNeedsCurrentColor() const {
+    if (SkRecordReplayAreEventsDisallowed("DWriteFontTypeface::onGlyphMaskNeedsCurrentColor")) {
+        // RUN-2619: We cannot read Windows fonts when replaying.
+        return false;
+    }
     return fDWriteFontFace2 && fDWriteFontFace2->GetColorPaletteCount() > 0;
 }
 

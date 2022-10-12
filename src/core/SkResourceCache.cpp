@@ -544,7 +544,14 @@ void SkResourceCache::VisitAll(Visitor visitor, void* context) {
 
 void SkResourceCache::PostPurgeSharedID(uint64_t sharedID) {
     if (sharedID) {
+        // Allow purging shared IDs during GC.
+        if (SkRecordReplayAreEventsDisallowed())
+            SkRecordReplayBeginPassThroughEvents();
+
         SkMessageBus<PurgeSharedIDMessage, uint32_t>::Post(PurgeSharedIDMessage(sharedID));
+
+        if (SkRecordReplayAreEventsDisallowed())
+            SkRecordReplayEndPassThroughEvents();
     }
 }
 
