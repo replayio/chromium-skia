@@ -7,6 +7,8 @@
 
 #include "src/gpu/graphite/Renderer.h"
 
+#include "src/core/SkRecordReplay.h"
+
 namespace skgpu::graphite {
 
 static uint32_t next_id() {
@@ -36,6 +38,7 @@ RenderStep::RenderStep(std::string_view className,
         , fVertexStride(0)
         , fInstanceStride(0)
         , fName(className) {
+    SkRecordReplayAssert("[RUN-593-1969] graphite/RenderStep::RenderStep %u", fUniqueID);
     for (auto v : this->vertexAttributes()) {
         fVertexStride += v.sizeAlign4();
     }

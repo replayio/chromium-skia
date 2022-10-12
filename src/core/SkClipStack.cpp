@@ -8,6 +8,7 @@
 #include "include/core/SkCanvas.h"
 #include "include/core/SkPath.h"
 #include "src/core/SkClipStack.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkRectPriv.h"
 #include "src/shaders/SkShaderBase.h"
 
@@ -930,6 +931,7 @@ uint32_t SkClipStack::GetNextGenID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id < kFirstUnreservedGenID);
+    SkRecordReplayAssert("[RUN-593-1969] SkClipStack::GetNextGenID %u", id);
     return id;
 }
 
