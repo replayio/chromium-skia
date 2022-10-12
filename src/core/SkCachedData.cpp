@@ -9,8 +9,11 @@
 #include "src/core/SkCachedData.h"
 #include "src/core/SkDiscardableMemory.h"
 
+#include "src/core/SkRecordReplay.h"
+
 SkCachedData::SkCachedData(void* data, size_t size)
-    : fData(data)
+    : fMutex("SkCachedData.fMutex")
+    , fData(data)
     , fSize(size)
     , fRefCnt(1)
     , fStorageType(kMalloc_StorageType)
@@ -21,7 +24,8 @@ SkCachedData::SkCachedData(void* data, size_t size)
 }
 
 SkCachedData::SkCachedData(size_t size, SkDiscardableMemory* dm)
-    : fData(dm->data())
+    : fMutex("SkCachedData.fMutex")
+    , fData(dm->data())
     , fSize(size)
     , fRefCnt(1)
     , fStorageType(kDiscardableMemory_StorageType)

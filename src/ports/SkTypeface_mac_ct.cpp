@@ -230,7 +230,7 @@ static bool find_by_CTFontRef(SkTypeface* cached, void* context) {
 sk_sp<SkTypeface> SkTypeface_Mac::Make(SkUniqueCFRef<CTFontRef> font,
                                        OpszVariation opszVariation,
                                        std::unique_ptr<SkStreamAsset> providedData) {
-    static SkMutex gTFCacheMutex;
+    static SkMutex gTFCacheMutex("SkTypeface_Mac::Make");
     static SkTypefaceCache gTFCache;
 
     SkASSERT(font);
