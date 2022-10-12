@@ -26,6 +26,7 @@
 #include "src/core/SkMatrixPriv.h"
 #include "src/core/SkPicturePriv.h"
 #include "src/core/SkReadBuffer.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkWriteBuffer.h"
 #include "src/shaders/SkLocalMatrixShader.h"
@@ -281,6 +282,19 @@ sk_sp<SkShader> SkPictureShader::rasterShader(const SkMatrix& totalM,
         }
 
         SkResourceCache::Add(new ImageFromPictureRec(key, image));
+
+        if (SkRecordReplayIsRecordingOrReplaying()) {
+            // Track SkPicture cache size (so we get a general idea of memory impact)
+            SkRecordReplayPrint(
+                    "[RUN-593-1863] SkPictureShader::rasterShader - cache SkPicture %u: %d x %d x "
+                    "%d -> %zu",
+                    fPicture->uniqueID(),
+                    info.imageInfo.width(),
+                    info.imageInfo.height(),
+                    info.imageInfo.bytesPerPixel(),
+                    info.imageInfo.computeByteSize(info.imageInfo.minRowBytes()));
+        }
+
         SkPicturePriv::AddedToCache(fPicture.get());
     }
     // Scale the image to the original picture size.

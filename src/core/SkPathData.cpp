@@ -17,6 +17,7 @@
 #include "src/core/SkPathEnums.h"
 #include "src/core/SkPathPriv.h"
 #include "src/core/SkPathRawShapes.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkSafeMath.h"
 #include "src/core/SkSpanPriv.h"
 
@@ -41,6 +42,7 @@ static uint32_t next_pathdata_unique_id() {
         id <<= kHighBitsToMakeRoomForFillType;
         id >>= kHighBitsToMakeRoomForFillType;
     } while (id == 0);
+    SkRecordReplayAssert("[RUN-593-1969] SkPathData/next_pathdata_unique_id %u", id);
     return id;
 }
 

@@ -24,6 +24,8 @@
 #include <new>
 #include <utility>
 
+#include "src/core/SkRecordReplay.h"
+
 static uint32_t next_id() {
     static std::atomic<uint32_t> nextID{1};
 
@@ -31,6 +33,7 @@ static uint32_t next_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidGenID);
+    SkRecordReplayAssert("[RUN-593-1969] SkVertices/next_id %d", id);
     return id;
 }
 
