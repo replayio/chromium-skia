@@ -8,6 +8,53 @@
 #include "include/private/SkSemaphore.h"
 #include "src/core/SkLeanWindows.h"
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#else
+#include <windows.h>
+#endif
+
+static void* LookupRecordReplaySymbol(const char* name) {
+#ifndef _WIN32
+  void* fnptr = dlsym(RTLD_DEFAULT, name);
+#else
+  HMODULE module = GetModuleHandleA("windows-recordreplay.dll");
+  void* fnptr = module ? (void*)GetProcAddress(module, name) : nullptr;
+#endif
+  return fnptr ? fnptr : reinterpret_cast<void*>(1);
+}
+
+int SkRecordReplayCreateOrderedLock(const char* ordered_name) {
+  static void* fnptr;
+  if (!fnptr) {
+    fnptr = LookupRecordReplaySymbol("RecordReplayCreateOrderedLock");
+  }
+  if (fnptr != reinterpret_cast<void*>(1)) {
+    return reinterpret_cast<int(*)(const char*)>(fnptr)(ordered_name);
+  }
+  return 0;
+}
+
+void SkRecordReplayOrderedLock(int lock) {
+  static void* fnptr;
+  if (!fnptr) {
+    fnptr = LookupRecordReplaySymbol("RecordReplayOrderedLock");
+  }
+  if (fnptr != reinterpret_cast<void*>(1)) {
+    reinterpret_cast<void(*)(int)>(fnptr)(lock);
+  }
+}
+
+void SkRecordReplayOrderedUnlock(int lock) {
+  static void* fnptr;
+  if (!fnptr) {
+    fnptr = LookupRecordReplaySymbol("RecordReplayOrderedUnlock");
+  }
+  if (fnptr != reinterpret_cast<void*>(1)) {
+    reinterpret_cast<void(*)(int)>(fnptr)(lock);
+  }
+}
+
 #if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
     #include <dispatch/dispatch.h>
 
