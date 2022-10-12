@@ -13,6 +13,7 @@
 #include "include/private/base/SkLoadUserConfig.h" // IWYU pragma: keep
 #include "include/private/base/SkMutex.h"
 #include "src/core/SkDescriptor.h"
+#include "src/core/SkStrike.h"
 #include "src/core/SkStrikeSpec.h"
 #include "src/text/StrikeForGPU.h"
 
@@ -36,7 +37,7 @@ class SkTraceMemoryDump;
 
 class SkStrikeCache final : public sktext::StrikeForGPUCacheInterface {
 public:
-    SkStrikeCache() = default;
+    SkStrikeCache() : fLock("SkStrikeCache.fLock") {}
 
     static SkStrikeCache* GlobalStrikeCache();
 
