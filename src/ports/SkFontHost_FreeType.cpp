@@ -33,6 +33,7 @@
 #include "src/core/SkGlyph.h"
 #include "src/core/SkMask.h"
 #include "src/core/SkMaskGamma.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkScalerContext.h"
 #include "src/ports/SkFontHost_FreeType_common.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
@@ -217,7 +218,7 @@ private:
 };
 
 static SkMutex& f_t_mutex() {
-    static SkMutex& mutex = *(new SkMutex);
+    static SkMutex& mutex = *(new SkMutex("f_t_mutex"));
     return mutex;
 }
 
