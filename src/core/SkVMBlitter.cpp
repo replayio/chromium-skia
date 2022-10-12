@@ -21,6 +21,7 @@
 #include "src/core/SkMask.h"
 #include "src/core/SkMatrixProvider.h"
 #include "src/core/SkPaintPriv.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkVM.h"
 #include "src/effects/colorfilters/SkColorFilterBase.h"
 #include "src/shaders/SkColorFilterShader.h"
