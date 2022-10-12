@@ -25,6 +25,7 @@
 #include "include/private/SkLog.h"
 #include "src/capture/SkCaptureManager.h"
 #include "src/core/SkMipmap.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/gpu/GpuTypesPriv.h"
 #include "src/gpu/RefCntedCallback.h"
@@ -112,6 +113,7 @@ uint32_t next_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidGenID);
+    SkRecordReplayAssert("[RUN-593-1969] graphite/Recorder/next_id %d", id);
     return id;
 }
 
