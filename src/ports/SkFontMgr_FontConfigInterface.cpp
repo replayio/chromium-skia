@@ -15,6 +15,7 @@
 #include "include/ports/SkFontScanner_FreeType.h"
 #include "include/private/base/SkMutex.h"
 #include "src/core/SkFontDescriptor.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkTypefaceCache.h"
 #include "src/ports/SkFontConfigTypeface.h"
@@ -155,6 +156,7 @@ public:
     SkFontMgr_FCI(sk_sp<SkFontConfigInterface> fci, std::unique_ptr<SkFontScanner> scanner)
         : fFCI(std::move(fci))
         , fScanner(std::move(scanner))
+        , fMutex("SkFontMgr_FCI")
         , fCache(kMaxSize)
     {
         SkASSERT_RELEASE(fFCI);
