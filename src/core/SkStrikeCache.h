@@ -209,7 +209,7 @@ public:
 
 class SkStrikeCache final : public sktext::StrikeForGPUCacheInterface {
 public:
-    SkStrikeCache() = default;
+    SkStrikeCache() : fLock("SkStrikeCache.fLock") {}
 
     static SkStrikeCache* GlobalStrikeCache();
 

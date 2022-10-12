@@ -721,7 +721,8 @@ public:
     explicit SkFontMgr_fontconfig(FcConfig* config)
         : fFC(config ? config : FcInitLoadConfigAndFonts())
         , fSysroot(reinterpret_cast<const char*>(FcConfigGetSysRoot(fFC)))
-        , fFamilyNames(GetFamilyNames(fFC)) { }
+        , fFamilyNames(GetFamilyNames(fFC))
+        , fTFCacheMutex("SkFontMgr_fontconfig") { }
 
     ~SkFontMgr_fontconfig() override {
         // Hold the lock while unrefing the config.
