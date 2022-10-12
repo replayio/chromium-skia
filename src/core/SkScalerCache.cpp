@@ -17,6 +17,8 @@
 #include "src/core/SkScalerContext.h"
 #include "src/text/StrikeForGPU.h"
 
+#include "src/core/SkRecordReplay.h"
+
 static SkFontMetrics use_or_generate_metrics(
         const SkFontMetrics* metrics, SkScalerContext* context) {
     SkFontMetrics answer;
@@ -34,7 +36,8 @@ SkScalerCache::SkScalerCache(
         : fScalerContext{std::move(scaler)}
         , fFontMetrics{use_or_generate_metrics(fontMetrics, fScalerContext.get())}
         , fRoundingSpec{fScalerContext->isSubpixel(),
-                        fScalerContext->computeAxisAlignmentForHText()} {
+                        fScalerContext->computeAxisAlignmentForHText()}
+        , fMu("SkScalerCache.fMu") {
     SkASSERT(fScalerContext != nullptr);
 }
 
@@ -46,11 +49,18 @@ std::tuple<SkGlyph*, size_t> SkScalerCache::glyph(SkPackedGlyphID packedGlyphID)
 std::tuple<SkGlyphDigest, size_t> SkScalerCache::digest(SkPackedGlyphID packedGlyphID) {
     SkGlyphDigest* digest = fDigestForPackedGlyphID.find(packedGlyphID);
 
+    // https://linear.app/replay/issue/RUN-480
+    SkRecordReplayAssert("SkScalerCache::digest %d %d", packedGlyphID, !!digest);
+
     if (digest != nullptr) {
         return {*digest, 0};
     }
 
     SkGlyph* glyph = fAlloc.make<SkGlyph>(fScalerContext->makeGlyph(packedGlyphID, &fAlloc));
+
+    // https://linear.app/replay/issue/RUN-480
+    SkRecordReplayAssert("SkScalerCache::digest #2");
+
     return {this->addGlyph(glyph), sizeof(SkGlyph)};
 }
 
@@ -247,6 +257,10 @@ template <typename Fn>
 size_t SkScalerCache::commonFilterLoop(SkDrawableGlyphBuffer* accepted, Fn&& fn) {
     size_t total = 0;
     for (auto [i, packedID, pos] : SkMakeEnumerate(accepted->input())) {
+        // https://linear.app/replay/issue/RUN-480
+        SkRecordReplayAssert("SkScalerCache::commonFilterLoop #2 %d %d %d",
+                             i, packedID, SkScalarsAreFinite(pos.x(), pos.y()));
+
         if (SkScalarsAreFinite(pos.x(), pos.y())) {
             auto [digest, size] = this->digest(packedID);
             total += size;

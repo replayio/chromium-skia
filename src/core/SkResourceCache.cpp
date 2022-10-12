@@ -15,16 +15,22 @@
 #include "src/core/SkMessageBus.h"
 #include "src/core/SkMipmap.h"
 #include "src/core/SkOpts.h"
+#include "src/core/SkRecordReplay.h"
 
 #include <stddef.h>
 #include <stdlib.h>
 
 DECLARE_SKMESSAGEBUS_MESSAGE(SkResourceCache::PurgeSharedIDMessage, uint32_t, true)
 
+// Replay-edit: assign names to parameters so we can assert on them.
+// NOTE: We cannot assert on the inbox or message id up the stack, since
+// they are not always assured to be numbers.
 static inline bool SkShouldPostMessageToBus(
-        const SkResourceCache::PurgeSharedIDMessage&, uint32_t) {
+        const SkResourceCache::PurgeSharedIDMessage& message, uint32_t inboxId) {
     // SkResourceCache is typically used as a singleton and we don't label Inboxes so all messages
     // go to all inboxes.
+    SkRecordReplayAssert(
+            "[RUN-593-1801] SkShouldPostMessageToBus %u %llu", inboxId, message.fSharedID);
     return true;
 }
 
@@ -118,7 +124,9 @@ SkResourceCache::~SkResourceCache() {
 bool SkResourceCache::find(const Key& key, FindVisitor visitor, void* context) {
     this->checkMessages();
 
-    if (auto found = fHash->find(key)) {
+    auto found = fHash->find(key);
+    SkRecordReplayAssert("[RUN-593] SkResourceCache::find %d", !!found);
+    if (found) {
         Rec* rec = *found;
         if (visitor(*rec, context)) {
             this->moveToHead(rec);  // for our LRU
@@ -165,6 +173,10 @@ void SkResourceCache::add(Rec* rec, void* payload) {
     fHash->set(rec);
     rec->postAddInstall(payload);
 
+    // https://linear.app/replay/issue/RUN-593
+    SkRecordReplayAssert(
+        "[RUN-593] SkResourceCache::add %llu %s", rec->bytesUsed(), rec->getCategory());
+
     if (gDumpCacheTransactions) {
         SkString bytesStr, totalStr;
         make_size_str(rec->bytesUsed(), &bytesStr);
@@ -181,6 +193,10 @@ void SkResourceCache::remove(Rec* rec) {
     SkASSERT(rec->canBePurged());
     size_t used = rec->bytesUsed();
     SkASSERT(used <= fTotalBytesUsed);
+
+    // https://linear.app/replay/issue/RUN-593
+    SkRecordReplayAssert(
+            "[RUN-593] SkResourceCache::remove %d %s", rec->bytesUsed(), rec->getCategory());
 
     this->release(rec);
     fHash->remove(rec->getKey());
@@ -235,6 +251,7 @@ static int gPurgeHitCounter;
 #endif
 
 void SkResourceCache::purgeSharedID(uint64_t sharedID) {
+    SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::purgeSharedID A %llu", sharedID);
     if (0 == sharedID) {
         return;
     }
@@ -248,6 +265,10 @@ void SkResourceCache::purgeSharedID(uint64_t sharedID) {
     Rec* rec = fTail;
     while (rec) {
         Rec* prev = rec->fPrev;
+        SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::purgeSharedID B %llu %d %d",
+                             sharedID,
+                             rec->getKey().getSharedID() == sharedID,
+                             rec->canBePurged());
         if (rec->getKey().getSharedID() == sharedID) {
             // even though the "src" is now dead, caches could still be in-flight, so
             // we have to check if it can be removed.
@@ -260,6 +281,8 @@ void SkResourceCache::purgeSharedID(uint64_t sharedID) {
         }
         rec = prev;
     }
+
+    SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::purgeSharedID C %llu", sharedID);
 
 #ifdef SK_TRACK_PURGE_SHAREDID_HITRATE
     if (found) {
@@ -445,6 +468,8 @@ size_t SkResourceCache::getEffectiveSingleAllocationByteLimit() const {
 void SkResourceCache::checkMessages() {
     SkTArray<PurgeSharedIDMessage> msgs;
     fPurgeSharedIDInbox.poll(&msgs);
+
+    SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::checkMessages %d", msgs.size());
     for (int i = 0; i < msgs.size(); ++i) {
         this->purgeSharedID(msgs[i].fSharedID);
     }
@@ -529,7 +554,8 @@ void SkResourceCache::CheckMessages() {
 
 bool SkResourceCache::Find(const Key& key, FindVisitor visitor, void* context) {
     SkAutoMutexExclusive am(resource_cache_mutex());
-    return get_cache()->find(key, visitor, context);
+    bool rv = get_cache()->find(key, visitor, context);
+    return rv;
 }
 
 void SkResourceCache::Add(Rec* rec, void* payload) {
