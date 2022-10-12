@@ -456,7 +456,7 @@ void SkResourceCache::checkMessages() {
 
 static SkResourceCache* gResourceCache = nullptr;
 static SkMutex& resource_cache_mutex() {
-    static SkMutex& mutex = *(new SkMutex);
+    static SkMutex& mutex = *(new SkMutex("SkResourceCache"));
     return mutex;
 }
 
