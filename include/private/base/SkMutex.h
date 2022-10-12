@@ -14,23 +14,38 @@
 #include "include/private/base/SkThreadAnnotations.h"
 #include "include/private/base/SkThreadID.h"
 
+extern int SkRecordReplayCreateOrderedLock(const char* ordered_name);
+extern void SkRecordReplayOrderedLock(int lock);
+extern void SkRecordReplayOrderedUnlock(int lock);
+
 class SK_CAPABILITY("mutex") SkMutex {
 public:
     constexpr SkMutex() = default;
+    SkMutex(const char* ordered_name) {
+      fOrderedLockId = SkRecordReplayCreateOrderedLock(ordered_name);
+    }
 
     ~SkMutex() {
         this->assertNotHeld();
     }
 
     void acquire() SK_ACQUIRE() {
-        fSemaphore.wait();
+        if (fOrderedLockId) {
+          SkRecordReplayOrderedLock(fOrderedLockId);
+        } else {
+          fSemaphore.wait();
+        }
         SkDEBUGCODE(fOwner = SkGetThreadID();)
     }
 
     void release() SK_RELEASE_CAPABILITY() {
         this->assertHeld();
         SkDEBUGCODE(fOwner = kIllegalThreadID;)
-        fSemaphore.signal();
+        if (fOrderedLockId) {
+          SkRecordReplayOrderedUnlock(fOrderedLockId);
+        } else {
+          fSemaphore.signal();
+        }
     }
 
     void assertHeld() SK_ASSERT_CAPABILITY(this) {
@@ -43,6 +58,7 @@ public:
 
 private:
     SkSemaphore fSemaphore{1};
+    int fOrderedLockId = 0;
     SkDEBUGCODE(SkThreadID fOwner{kIllegalThreadID};)
 };
 
