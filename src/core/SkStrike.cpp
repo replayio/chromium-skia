@@ -17,6 +17,7 @@
 #include "src/core/SkEnumerate.h"
 #include "src/core/SkGlyph.h"
 #include "src/core/SkReadBuffer.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkScalerContext.h"
 #include "src/core/SkStrikeCache.h"
 #include "src/core/SkWriteBuffer.h"
@@ -51,6 +52,7 @@ SkStrike::SkStrike(SkStrikeCache* strikeCache,
                         scaler->computeAxisAlignmentForHText()}
         , fStrikeSpec{strikeSpec}
         , fStrikeCache{strikeCache}
+        , fStrikeLock("SkStrike.fStrikeLock")
         , fScalerContext{std::move(scaler)}
         , fPinner{std::move(pinner)} {
     SkASSERT(fScalerContext != nullptr);
@@ -329,6 +331,10 @@ SkGlyph* SkStrike::glyph(SkPackedGlyphID packedGlyphID) {
 
 SkGlyphDigest SkStrike::digestFor(ActionType actionType, SkPackedGlyphID packedGlyphID) {
     SkGlyphDigest* digestPtr = fDigestForPackedGlyphID.find(packedGlyphID);
+
+    // https://linear.app/replay/issue/RUN-480
+    SkRecordReplayAssert("SkStrike::digestFor %d %d", packedGlyphID, !!digestPtr);
+
     if (digestPtr != nullptr && digestPtr->actionFor(actionType) != GlyphAction::kUnset) {
         return *digestPtr;
     }
@@ -338,6 +344,10 @@ SkGlyphDigest SkStrike::digestFor(ActionType actionType, SkPackedGlyphID packedG
         glyph = fGlyphForIndex[digestPtr->index()];
     } else {
         glyph = fAlloc.make<SkGlyph>(fScalerContext->makeGlyph(packedGlyphID, &fAlloc));
+
+        // https://linear.app/replay/issue/RUN-480
+        SkRecordReplayAssert("SkStrike::digestFor #2");
+
         fMemoryIncrease += sizeof(SkGlyph);
         digestPtr = this->addGlyphAndDigest(glyph);
     }

@@ -48,6 +48,8 @@
 #include <dwrite_1.h>
 #include <dwrite_3.h>
 
+#include "src/core/SkRecordReplay.h"
+
 namespace {
 static inline const constexpr bool kSkShowTextBlitCoverage = false;
 
@@ -489,6 +491,8 @@ HRESULT SkScalerContext_DW::getBoundingBox(SkGlyph* glyph,
                                            DWRITE_TEXTURE_TYPE textureType,
                                            RECT* bbox)
 {
+    SkRecordReplayAssert("[RUN-2058] SkScalerContext_DW::getBoundingBox");
+
     DWriteFontTypeface* typeface = this->getDWriteTypeface();
 
     //Measure raster size.
@@ -544,11 +548,16 @@ HRESULT SkScalerContext_DW::getBoundingBox(SkGlyph* glyph,
                 "Could not create glyph run analysis.");
         }
     }
+
+    SkRecordReplayAssert("[RUN-2058] SkScalerContext_DW::getBoundingBox #1");
+
     {
         Shared l(maybe_dw_mutex(*typeface));
         HRM(glyphRunAnalysis->GetAlphaTextureBounds(textureType, bbox),
             "Could not get texture bounds.");
     }
+
+    SkRecordReplayAssert("[RUN-2058] SkScalerContext_DW::getBoundingBox Done");
     return S_OK;
 }
 
