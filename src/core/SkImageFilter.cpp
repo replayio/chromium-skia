@@ -15,6 +15,7 @@
 #include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkLocalMatrixImageFilter.h"
 #include "src/core/SkReadBuffer.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkRectPriv.h"
 #include "src/core/SkSpecialImage.h"
 #include "src/core/SkSpecialSurface.h"
@@ -143,6 +144,7 @@ static int32_t next_image_filter_unique_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == 0);
+    id = SkRecordReplayValue("next_image_filter_unique_id", id);
     return id;
 }
 
@@ -163,7 +165,13 @@ SkImageFilter_Base::SkImageFilter_Base(sk_sp<SkImageFilter> const* inputs,
 }
 
 SkImageFilter_Base::~SkImageFilter_Base() {
-    SkImageFilterCache::Get()->purgeByImageFilter(this);
+    if (fAddedToCache.load()) {
+        if (SkRecordReplayIsRecordingOrReplaying()) {
+            SkRecordReplayQueueImageFilterPurge(fUniqueID);
+        } else {
+            SkImageFilterCache::Get()->purgeByImageFilter(this);
+        }
+    }
 }
 
 bool SkImageFilter_Base::Common::unflatten(SkReadBuffer& buffer, int expectedCount) {
@@ -245,6 +253,8 @@ skif::FilterResult SkImageFilter_Base::filterImage(const skif::Context& context)
 
     SkImageFilterCacheKey key(fUniqueID, context.mapping().layerMatrix(), context.clipBounds(),
                               srcGenID, srcSubset);
+    SkRecordReplayAssert("SkImageFilter_Base::filterImage %u %d %u %d %d", fUniqueID,
+                         !!context.cache(), srcGenID, srcSubset.width(), srcSubset.height());
     if (context.cache() && context.cache()->get(key, &result)) {
         return result;
     }

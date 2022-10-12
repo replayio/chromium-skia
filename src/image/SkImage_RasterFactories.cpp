@@ -16,6 +16,7 @@
 #include "include/private/base/SkMath.h"
 #include "src/core/SkCompressedDataUtils.h"
 #include "src/core/SkImagePriv.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/image/SkImage_Base.h"
 #include "src/image/SkImage_Raster.h"
 
@@ -67,6 +68,7 @@ static bool valid_args(const SkImageInfo& info, size_t rowBytes, size_t* minSize
 
 namespace SkImages {
 sk_sp<SkImage> RasterFromBitmap(const SkBitmap& bm) {
+    SkRecordReplayAssert("[RUN-593-1863] SkImages::RasterFromBitmap %d", !!bm.pixelRef());
     if (!bm.pixelRef()) {
         return nullptr;
     }

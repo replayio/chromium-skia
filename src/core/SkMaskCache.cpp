@@ -168,6 +168,10 @@ SkCachedData* SkMaskCache::FindAndRef(SkScalar sigma, SkBlurStyle style,
                                       SkResourceCache* localCache) {
     MaskValue result;
     RectsBlurKey key(sigma, style, rects, count);
+
+    SkRecordReplayAssert(
+            "[RUN-2367-2368] SkMaskCache::FindAndRef %d", !!localCache);
+
     if (!CHECK_LOCAL(localCache, find, Find, key, RectsBlurRec::Visitor, &result)) {
         return nullptr;
     }

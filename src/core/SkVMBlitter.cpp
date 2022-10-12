@@ -18,6 +18,7 @@
 #include "src/core/SkLRUCache.h"
 #include "src/core/SkMatrixProvider.h"
 #include "src/core/SkPaintPriv.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkVM.h"
 #include "src/core/SkVMBlitter.h"
 #include "src/shaders/SkColorFilterShader.h"

@@ -676,6 +676,9 @@ static bool isAxisAligned(const SkScalerContextRec& rec) {
 std::unique_ptr<SkScalerContext> SkTypeface_FreeType::onCreateScalerContext(
     const SkScalerContextEffects& effects, const SkDescriptor* desc) const
 {
+    // https://linear.app/replay/issue/RUN-845
+    SkRecordReplayAssert("SkTypeface_FreeType::onCreateScalerContext");
+
     auto c = std::make_unique<SkScalerContext_FreeType>(
             sk_ref_sp(const_cast<SkTypeface_FreeType*>(this)), effects, desc);
     if (c->success()) {
