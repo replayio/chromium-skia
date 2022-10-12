@@ -95,9 +95,14 @@ SK_STDMETHODIMP StreamFontFileLoader::CreateStreamFromKey(
     UINT32 fontFileReferenceKeySize,
     IDWriteFontFileStream** fontFileStream)
 {
+    SkRecordReplayAssert("[RUN-2058] StreamFontFileLoader::CreateStreamFromKey");
+
     SkTScopedComPtr<SkDWriteFontFileStreamWrapper> stream;
     HR(SkDWriteFontFileStreamWrapper::Create(fStream->duplicate().release(), &stream));
     *fontFileStream = stream.release();
+
+    SkRecordReplayAssert("[RUN-2058] StreamFontFileLoader::CreateStreamFromKey Done");
+
     return S_OK;
 }
 
@@ -423,6 +428,8 @@ struct ProtoDWriteTypeface {
 };
 
 static bool FindByDWriteFont(SkTypeface* cached, void* ctx) {
+    SkRecordReplayAssert("[RUN-2612-2639] FindByDWriteFont %u", cached->uniqueID());
+
     DWriteFontTypeface* cshFace = reinterpret_cast<DWriteFontTypeface*>(cached);
     ProtoDWriteTypeface* ctxFace = reinterpret_cast<ProtoDWriteTypeface*>(ctx);
 
@@ -565,7 +572,10 @@ SkFontStyleSet* SkFontMgr_DirectWrite::onCreateStyleSet(int index) const {
 }
 
 SkFontStyleSet* SkFontMgr_DirectWrite::onMatchFamily(const char familyName[]) const {
+    SkRecordReplayAssert("[RUN-2116] SkFontMgr_DirectWrite::onMatchFamily %s", familyName);
+
     if (!familyName) {
+        SkRecordReplayAssert("[RUN-2116] SkFontMgr_DirectWrite::onMatchFamily #1");
         return nullptr;
     }
 
@@ -576,6 +586,9 @@ SkFontStyleSet* SkFontMgr_DirectWrite::onMatchFamily(const char familyName[]) co
     BOOL exists;
     HRNM(fFontCollection->FindFamilyName(dwFamilyName.get(), &index, &exists),
             "Failed while finding family by name.");
+
+    SkRecordReplayAssert("[RUN-2116] SkFontMgr_DirectWrite::onMatchFamily #2");
+
     if (!exists) {
         return nullptr;
     }

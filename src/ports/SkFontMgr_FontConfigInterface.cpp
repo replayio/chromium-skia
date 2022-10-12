@@ -141,6 +141,20 @@ public:
         }, &face);
         return face;
     }
+
+    /** Any FaceRec-bearing typeface already in the request cache, or null if empty. */
+    sk_sp<SkTypeface> findAny() {
+        sk_sp<SkTypeface> face;
+        fCachedResults.visitAll([](const SkResourceCache::Rec& rec, void* context) {
+            sk_sp<SkTypeface>* out = static_cast<sk_sp<SkTypeface>*>(context);
+            if (*out) {
+                return;
+            }
+            const Result& result = static_cast<const Result&>(rec);
+            *out = result.fFace;
+        }, &face);
+        return face;
+    }
 };
 
 ///////////////////////////////////////////////////////////////////////////////

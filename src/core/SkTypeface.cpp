@@ -22,8 +22,13 @@
 #include "src/sfnt/SkOTTable_OS_2.h"
 #include "src/utils/SkUTF.h"
 
+#include "src/core/SkRecordReplay.h"
+
 SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
-    : fUniqueID(SkTypefaceCache::NewTypefaceID()), fStyle(style), fIsFixedPitch(isFixedPitch) { }
+    : fUniqueID(SkTypefaceCache::NewTypefaceID()), fStyle(style), fIsFixedPitch(isFixedPitch)
+{
+    SkRecordReplayAssert("[RUN-593-1969] SkTypeface::SkTypeface %u", fUniqueID);
+}
 
 SkTypeface::~SkTypeface() { }
 

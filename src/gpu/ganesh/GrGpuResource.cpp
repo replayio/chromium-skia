@@ -209,6 +209,7 @@ uint32_t GrGpuResource::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrGpuResource::CreateUniqueID %u", id);
     return id;
 }
 
