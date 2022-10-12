@@ -29,6 +29,7 @@
 #include "src/core/SkDraw.h"
 #include "src/core/SkGlyph.h"
 #include "src/core/SkMask.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkScalerContext.h"
 #include "src/core/SkStrike.h"
 #include "src/core/SkStrikeSpec.h"
@@ -134,6 +135,10 @@ prepare_for_direct_mask_drawing(SkStrike* strike,
     int rejectedSize = 0;
     strike->lock();
     for (auto [glyphID, pos] : source) {
+        // https://linear.app/replay/issue/RUN-480
+        SkRecordReplayAssert("prepare_for_direct_mask_drawing #2 %d %d",
+                             glyphID, SkIsFinite(pos.x(), pos.y()));
+
         if (!SkIsFinite(pos.x(), pos.y())) {
             continue;
         }
@@ -180,6 +185,10 @@ prepare_for_direct_bitmap_drawing(SkStrike* strike,
     int rejectedSize = 0;
     strike->lock();
     for (auto [glyphID, pos] : source) {
+        // https://linear.app/replay/issue/RUN-480
+        SkRecordReplayAssert("prepare_for_direct_mask_drawing #2 %d %d",
+                             glyphID, SkIsFinite(pos.x(), pos.y()));
+
         if (!SkIsFinite(pos.x(), pos.y())) {
             continue;
         }
