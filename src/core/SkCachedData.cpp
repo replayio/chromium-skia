@@ -10,11 +10,17 @@
 #include "include/private/SkOnlyStackAllocatable.h"
 #include "include/private/chromium/SkDiscardableMemory.h"
 
+#include "src/core/SkRecordReplay.h"
+
 SkCachedData::SkCachedData(void* data, size_t size)
-        : fStorage(std::in_place_type<MallocStorage>, data), fData(data), fSize(size) {}
+        : fMutex("SkCachedData.fMutex")
+        , fStorage(std::in_place_type<MallocStorage>, data)
+        , fData(data)
+        , fSize(size) {}
 
 SkCachedData::SkCachedData(size_t size, SkDiscardableMemory* dm)
-        : fStorage(std::in_place_type<DiscardableStorage>, dm)
+        : fMutex("SkCachedData.fMutex")
+        , fStorage(std::in_place_type<DiscardableStorage>, dm)
         , fData(dm ? dm->data() : nullptr)
         , fSize(size) {}
 
