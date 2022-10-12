@@ -11,9 +11,11 @@
 #include "src/core/SkBlitMask.h"
 #include "src/core/SkBlitRow.h"
 #include "src/core/SkCpu.h"
+#include "src/core/SkImageFilterCache.h"
 #include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkMemset.h"
 #include "src/core/SkOpts.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkStrikeCache.h"
 #include "src/core/SkSwizzlePriv.h"
@@ -28,6 +30,13 @@ void SkGraphics::Init() {
     SkOpts::Init_BlitRow();
     SkOpts::Init_Memset();
     SkOpts::Init_Swizzler();
+
+    if (SkRecordReplayIsRecordingOrReplaying("eager-initialization", "SkImageFilterCache")) {
+        // The global image filter cache's mutex creates an ordered lock, so the cache must not be
+        // created by whichever thread first rasterizes a filtered draw (the compositor, a raster
+        // worker or a canvas worker), which differs between recording and replaying.
+        SkImageFilterCache::Get();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
