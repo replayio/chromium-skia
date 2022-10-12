@@ -23,6 +23,7 @@
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkRecord.h"
 #include "src/core/SkRecordDraw.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkRecords.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkStreamPriv.h"
@@ -51,6 +52,8 @@ static uint32_t next_picture_id() {
     do {
         id = nextID.fetch_add(+1, std::memory_order_relaxed);
     } while (id == 0);
+
+    SkRecordReplayAssert("[RUN-593-1863] SkPicture::fUniqueID %u", id);
     return id;
 }
 
@@ -68,7 +71,13 @@ SkPicture::SkPicture(const SkRect& cull,
 
 SkPicture::~SkPicture() {
     if (fAddedToCache.load()) {
-        SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
+        if (SkRecordReplayAreEventsDisallowed() &&
+            SkRecordReplayEnterLeakMemory("SkPicture")) {
+            // Leak and print (so we get a general idea of memory impact)
+            SkRecordReplayPrint("[RUN-593-1863] SkPicture::~SkPicture - [LEAK] SkPicture %u", fUniqueID);
+        } else {
+            SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
+        }
     }
 }
 
