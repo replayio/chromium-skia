@@ -18,6 +18,7 @@
 #include "include/core/SkTypes.h"
 #include "include/private/SkDebug.h"
 #include "src/core/SkBitmapCache.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/image/SkRescaleAndReadPixels.h"
 
 #include <atomic>
@@ -34,7 +35,14 @@ SkImage_Base::SkImage_Base(const SkImageInfo& info, uint32_t uniqueID,
 
 SkImage_Base::~SkImage_Base() {
     if (fAddedToRasterCache.load()) {
-        SkNotifyBitmapGenIDIsStale(this->uniqueID());
+        if (SkRecordReplayAreEventsDisallowed() &&
+            SkRecordReplayEnterLeakMemory("SkImage")) {
+            // Leak and print (so we get a general idea of memory impact)
+            SkRecordReplayPrint("[RUN-593-1883] SkImage_Base::~SkImage_Base - [LEAK] SkImage_Base %u",
+                                fUniqueID);
+        } else {
+            SkNotifyBitmapGenIDIsStale(this->uniqueID());
+        }
     }
 }
 
