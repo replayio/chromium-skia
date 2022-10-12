@@ -263,6 +263,16 @@ protected:
             return sk_sp<SkTypeface>(face);
         }
 
+        // Post-diverge, matchFamilyName below is a font service IPC that never completes.
+        // Prefer any already-cached typeface over a null PrimaryFont.
+        if (SkRecordReplayHasDivergedFromRecording()) {
+            sk_sp<SkTypeface> any = fCache.findAny();
+            if (any) {
+                return any;
+            }
+            return nullptr;
+        }
+
         SkFontConfigInterface::FontIdentity identity;
         SkString outFamilyName;
         SkFontStyle outStyle;
