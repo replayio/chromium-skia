@@ -51,6 +51,8 @@
 
 #include <algorithm>
 
+#include "src/core/SkRecordReplay.h"
+
 class SkDescriptor;
 
 
@@ -138,6 +140,15 @@ SkScalerContext_Mac::SkScalerContext_Mac(sk_sp<SkTypeface_Mac> typeface,
         fInvTransform = CGAffineTransformInvert(fTransform);
     } else {
         fInvTransform = fTransform;
+    }
+
+    if (SkRecordReplayAreEventsUnavailable("divergent-update")) {
+        // Short-circuit font creation because it requires a lot of
+        // bindings that we do not yet support.
+        // NOTE: All seconday arguments are currently ignored.
+        fCTFont.reset(CTFontCreateCopyWithAttributes(ctFont, 0, nullptr, nullptr));
+        fCGFont.reset(CTFontCopyGraphicsFont(ctFont, nullptr));
+        return;
     }
 
     // The transform contains everything except the requested text size.
