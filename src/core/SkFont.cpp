@@ -39,6 +39,8 @@
 
 using namespace skia_private;
 
+#include "src/core/SkRecordReplay.h"
+
 #define kDefault_Size       SkPaintDefaults_TextSize
 #define kDefault_Flags      SkFont::kBaselineSnap_PrivFlag
 #define kDefault_Edging     SkFont::Edging::kAntiAlias
@@ -239,6 +241,14 @@ void SkFont::getWidthsBounds(SkSpan<const SkGlyphID> glyphIDs,
                              SkSpan<SkScalar> widths,
                              SkSpan<SkRect> bounds,
                              const SkPaint* paint) const {
+    // https://linear.app/replay/issue/RUN-480
+    SkRecordReplayAssert("SkFont::getWidthsBounds %d", (int)glyphIDs.size());
+
+    for (int i = 0; i < (int)glyphIDs.size(); i++) {
+      // https://linear.app/replay/issue/RUN-480
+      SkRecordReplayAssert("SkFont::getWidthsBounds #1 %d %d", i, glyphIDs[i]);
+    }
+
     auto [strikeSpec, strikeToSourceScale] = SkStrikeSpec::MakeCanonicalized(*this, paint);
     SkBulkGlyphMetrics metrics{strikeSpec};
     SkSpan<const SkGlyph*> glyphs = metrics.glyphs(glyphIDs);
