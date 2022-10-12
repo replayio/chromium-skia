@@ -15,6 +15,7 @@
 #include "src/core/SkDistanceFieldGen.h"
 #include "src/core/SkEnumerate.h"
 #include "src/core/SkGlyphBuffer.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkScalerContext.h"
 #include "src/core/SkStrikeCache.h"
 #include "src/text/StrikeForGPU.h"
@@ -44,6 +45,7 @@ SkStrike::SkStrike(SkStrikeCache* strikeCache,
                         scaler->computeAxisAlignmentForHText()}
         , fStrikeSpec{strikeSpec}
         , fStrikeCache{strikeCache}
+        , fStrikeLock("SkStrike.fStrikeLock")
         , fScalerContext{std::move(scaler)}
         , fPinner{std::move(pinner)} {
     SkASSERT(fScalerContext != nullptr);
@@ -316,6 +318,10 @@ void SkStrike::dumpMemoryStatistics(SkTraceMemoryDump* dump) const {
 template <typename Fn>
 void SkStrike::commonFilterLoop(SkDrawableGlyphBuffer* accepted, Fn&& fn) {
     for (auto [i, packedID, pos] : SkMakeEnumerate(accepted->input())) {
+        // https://linear.app/replay/issue/RUN-480
+        SkRecordReplayAssert("SkStrike::commonFilterLoop #2 %d %d %d",
+                             i, packedID, SkScalarsAreFinite(pos.x(), pos.y()));
+
         if (SkScalarsAreFinite(pos.x(), pos.y())) {
             SkGlyphDigest digest = this->digest(packedID);
             if (!digest.isEmpty()) {
@@ -333,11 +339,18 @@ SkGlyph* SkStrike::glyph(SkPackedGlyphID packedGlyphID) {
 SkGlyphDigest SkStrike::digest(SkPackedGlyphID packedGlyphID) {
     SkGlyphDigest* digest = fDigestForPackedGlyphID.find(packedGlyphID);
 
+    // https://linear.app/replay/issue/RUN-480
+    SkRecordReplayAssert("SkStrike::digest %d %d", packedGlyphID, !!digest);
+
     if (digest != nullptr) {
         return *digest;
     }
 
     SkGlyph* glyph = fAlloc.make<SkGlyph>(fScalerContext->makeGlyph(packedGlyphID, &fAlloc));
+
+    // https://linear.app/replay/issue/RUN-480
+    SkRecordReplayAssert("SkStrike::digest #2");
+
     fMemoryIncrease += sizeof(SkGlyph);
     return this->addGlyph(glyph);
 }

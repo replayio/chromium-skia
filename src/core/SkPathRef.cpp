@@ -15,6 +15,8 @@
 
 #include <cstring>
 
+#include "src/core/SkRecordReplay.h"
+
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     static constexpr int kPathRefGenIDBitCnt = 30; // leave room for the fill type (skbug.com/1762)
 #else
@@ -442,6 +444,7 @@ uint32_t SkPathRef::genID(uint8_t fillType) const {
                 fGenerationID = nextID.fetch_add(1, std::memory_order_relaxed) & kMask;
             } while (fGenerationID == 0 || fGenerationID == kEmptyGenID);
         }
+        SkRecordReplayAssert("[RUN-593-1969] SkPathRef::genID %u", fGenerationID);
     }
     #if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
         SkASSERT((unsigned)fillType < (1 << (32 - kPathRefGenIDBitCnt)));
