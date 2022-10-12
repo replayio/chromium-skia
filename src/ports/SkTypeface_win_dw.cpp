@@ -678,30 +678,44 @@ sk_sp<SkTypeface> DWriteFontTypeface::onMakeClone(const SkFontArguments& args) c
 }
 
 std::unique_ptr<SkStreamAsset> DWriteFontTypeface::onOpenStream(int* ttcIndex) const {
+    SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream");
+
     *ttcIndex = fDWriteFontFace->GetIndex();
 
     UINT32 numFiles = 0;
     HRNM(fDWriteFontFace->GetFiles(&numFiles, nullptr),
          "Could not get number of font files.");
+
+    SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream #1");
+
     if (numFiles != 1) {
+        SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream #1");
         return nullptr;
     }
 
     SkTScopedComPtr<IDWriteFontFile> fontFile;
     HRNM(fDWriteFontFace->GetFiles(&numFiles, &fontFile), "Could not get font files.");
 
+    SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream #2");
+
     const void* fontFileKey;
     UINT32 fontFileKeySize;
     HRNM(fontFile->GetReferenceKey(&fontFileKey, &fontFileKeySize),
          "Could not get font file reference key.");
 
+    SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream #3");
+
     SkTScopedComPtr<IDWriteFontFileLoader> fontFileLoader;
     HRNM(fontFile->GetLoader(&fontFileLoader), "Could not get font file loader.");
+
+    SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream #4");
 
     SkTScopedComPtr<IDWriteFontFileStream> fontFileStream;
     HRNM(fontFileLoader->CreateStreamFromKey(fontFileKey, fontFileKeySize,
                                              &fontFileStream),
          "Could not create font file stream.");
+
+    SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream Done");
 
     return std::unique_ptr<SkStreamAsset>(new SkDWriteFontFileStream(fontFileStream.get()));
 }
@@ -953,9 +967,14 @@ SK_STDMETHODIMP StreamFontFileLoader::CreateStreamFromKey(
     UINT32 fontFileReferenceKeySize,
     IDWriteFontFileStream** fontFileStream)
 {
+    SkRecordReplayAssert("[RUN-2058] StreamFontFileLoader::CreateStreamFromKey");
+
     SkTScopedComPtr<SkDWriteFontFileStreamWrapper> stream;
     HR(SkDWriteFontFileStreamWrapper::Create(fStream->duplicate().release(), &stream));
     *fontFileStream = stream.release();
+
+    SkRecordReplayAssert("[RUN-2058] StreamFontFileLoader::CreateStreamFromKey Done");
+
     return S_OK;
 }
 

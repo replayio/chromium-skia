@@ -14,6 +14,7 @@
 #include "src/base/SkTLazy.h"
 #include "src/core/SkCachedData.h"
 #include "src/core/SkMask.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkResourceCache.h"
 
 #include <cstddef>
@@ -180,6 +181,10 @@ SkCachedData* SkMaskCache::FindAndRef(SkScalar sigma,
                                       SkResourceCache* localCache) {
     SkTLazy<MaskValue> result;
     RectsBlurKey key(sigma, style, rects);
+
+    SkRecordReplayAssert(
+            "[RUN-2367-2368] SkMaskCache::FindAndRef %d", !!localCache);
+
     if (!CHECK_LOCAL(localCache, find, Find, key, RectsBlurRec::Visitor, &result)) {
         return nullptr;
     }
