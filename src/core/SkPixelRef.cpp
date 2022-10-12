@@ -14,6 +14,8 @@
 
 #include <atomic>
 
+#include "src/core/SkRecordReplay.h"
+
 uint32_t SkNextID::ImageID() {
     // We never set the low bit.... see SkPixelRef::genIDIsUnique().
     static std::atomic<uint32_t> nextID{2};
@@ -88,7 +90,15 @@ void SkPixelRef::callGenIDChangeListeners() {
     if (this->genIDIsUnique()) {
         fGenIDChangeListeners.changed();
         if (fAddedToCache.exchange(false)) {
-            SkNotifyBitmapGenIDIsStale(this->getGenerationID());
+            if (SkRecordReplayAreEventsDisallowed() &&
+                SkRecordReplayEnterLeakMemory("SkPixelRef")) {
+                // Leak and print (so we get a general idea of memory impact)
+                SkRecordReplayPrint(
+                        "[RUN-593-1883] SkPixelRef::callGenIDChangeListeners - [LEAK] SkPixelRef %u",
+                        this->getGenerationID());
+            } else {
+                SkNotifyBitmapGenIDIsStale(this->getGenerationID());
+            }
         }
     } else {
         // Listeners get at most one shot, so even though these weren't triggered or not, blow them
