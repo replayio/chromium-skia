@@ -31,6 +31,8 @@
 
 #include <utility>
 
+#include "src/core/SkRecordReplay.h"
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SkPixmap::reset() {
@@ -208,6 +210,11 @@ bool SkPixmap::scalePixels(const SkPixmap& actualDst, const SkSamplingOptions& s
     // We may need to tweak how we interpret these just a little below, so we make copies.
     SkPixmap src = *this,
              dst = actualDst;
+
+    SkRecordReplayAssert(
+            "[RUN-593-1824] SkPixmap::scalePixels %d %d",
+            src.width() <= 0 || src.height() <= 0 || dst.width() <= 0 || dst.height() <= 0,
+            src.width() == dst.width() && src.height() == dst.height());
 
     // Can't do anthing with empty src or dst
     if (src.width() <= 0 || src.height() <= 0 ||

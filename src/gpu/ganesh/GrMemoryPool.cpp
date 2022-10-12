@@ -16,6 +16,8 @@
 
 #include <tuple>
 
+#include "src/core/SkRecordReplay.h"
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::unique_ptr<GrMemoryPool> GrMemoryPool::Make(size_t preallocSize, size_t minAllocSize) {
@@ -87,6 +89,8 @@ void* GrMemoryPool::allocate(size_t size) {
         static std::atomic<int> nextID{1};
         return nextID.fetch_add(1, std::memory_order_relaxed);
     }();
+
+    SkRecordReplayAssert("[RUN-593-1969] GrMemoryPool::allocate fID=%d", header->fID);
 
     // You can set a breakpoint here when a leaked ID is allocated to see the stack frame.
     fDebug->fAllocatedIDs.add(header->fID);

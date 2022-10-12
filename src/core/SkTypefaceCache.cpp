@@ -9,6 +9,8 @@
 #include "src/core/SkTypefaceCache.h"
 #include <atomic>
 
+#include "src/core/SkRecordReplay.h"
+
 #define TYPEFACE_CACHE_LIMIT    1024
 
 SkTypefaceCache::SkTypefaceCache() {}
@@ -18,21 +20,28 @@ void SkTypefaceCache::add(sk_sp<SkTypeface> face) {
         this->purge(TYPEFACE_CACHE_LIMIT >> 2);
     }
 
+    SkRecordReplayAssert("[RUN-2612-2639] SkTypefaceCache::add %u", face->uniqueID());
+
     fTypefaces.emplace_back(std::move(face));
 }
 
 sk_sp<SkTypeface> SkTypefaceCache::findByProcAndRef(FindProc proc, void* ctx) const {
+    SkRecordReplayAssert("[RUN-2612-2639] SkTypefaceCache::findByProcAndRef A %d", fTypefaces.count());
     for (const sk_sp<SkTypeface>& typeface : fTypefaces) {
         if (proc(typeface.get(), ctx)) {
+            SkRecordReplayAssert("[RUN-2612-2639] SkTypefaceCache::findByProcAndRef B %u",
+                                 typeface->uniqueID());
             return typeface;
         }
     }
+    SkRecordReplayAssert("[RUN-2612-2639] SkTypefaceCache::findByProcAndRef C");
     return nullptr;
 }
 
 void SkTypefaceCache::purge(int numToPurge) {
     int count = fTypefaces.count();
     int i = 0;
+    SkRecordReplayAssert("[RUN-2612-2639] SkTypefaceCache::purge %d %d", count, numToPurge);
     while (i < count) {
         if (fTypefaces[i]->unique()) {
             fTypefaces.removeShuffle(i);

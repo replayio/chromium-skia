@@ -33,6 +33,8 @@
 #include <cstring>
 #include <utility>
 
+#include "src/core/SkRecordReplay.h"
+
 static bool reset_return_false(SkBitmap* bm) {
     bm->reset();
     return false;
@@ -313,6 +315,9 @@ bool SkBitmap::installPixels(const SkImageInfo& requestedInfo, void* pixels, siz
         this->reset();
         return false;
     }
+    SkRecordReplayAssert("[RUN-593-1824] SkBitmap::installPixels A %d %d",
+                         nullptr == pixels,
+                         nullptr == releaseProc);
     if (nullptr == pixels) {
         invoke_release_proc(releaseProc, pixels, context);
         return true;    // we behaved as if they called setInfo()

@@ -9,6 +9,8 @@
 #include "include/core/SkDrawable.h"
 #include <atomic>
 
+#include "src/core/SkRecordReplay.h"
+
 static int32_t next_generation_id() {
     static std::atomic<int32_t> nextID{1};
 
@@ -16,6 +18,7 @@ static int32_t next_generation_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == 0);
+    SkRecordReplayAssert("[RUN-593-1969] next_generation_id %d", id);
     return id;
 }
 

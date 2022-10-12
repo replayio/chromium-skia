@@ -16,6 +16,8 @@
 #include "src/core/SkPathPriv.h"
 #include "src/core/SkSafeMath.h"
 
+#include "src/core/SkRecordReplay.h"
+
 //////////////////////////////////////////////////////////////////////////////
 SkPathRef::Editor::Editor(sk_sp<SkPathRef>* pathRef,
                           int incReserveVerbs,
@@ -483,6 +485,7 @@ uint32_t SkPathRef::genID() const {
                 fGenerationID = nextID.fetch_add(1, std::memory_order_relaxed) & kMask;
             } while (fGenerationID == 0 || fGenerationID == kEmptyGenID);
         }
+        SkRecordReplayAssert("[RUN-593-1969] SkPathRef::genID %u", fGenerationID);
     }
     return fGenerationID;
 }
