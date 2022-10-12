@@ -19,6 +19,7 @@
 #include "src/core/SkFontPriv.h"
 #include "src/core/SkGlyph.h"
 #include "src/core/SkRasterClip.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkScalerContext.h"
 #include "src/core/SkStrike.h"
 #include "src/core/SkStrikeCache.h"
@@ -120,6 +121,10 @@ prepare_for_direct_mask_drawing(SkStrike* strike,
     int rejectedSize = 0;
     strike->lock();
     for (auto [glyphID, pos] : source) {
+        // https://linear.app/replay/issue/RUN-480
+        SkRecordReplayAssert("prepare_for_direct_mask_drawing #2 %d %d",
+                             glyphID, SkScalarsAreFinite(pos.x(), pos.y()));
+
         if (!SkScalarsAreFinite(pos.x(), pos.y())) {
             continue;
         }
