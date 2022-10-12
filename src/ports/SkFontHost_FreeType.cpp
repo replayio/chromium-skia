@@ -728,6 +728,9 @@ std::unique_ptr<SkScalerContext> SkTypeface_FreeType::onCreateScalerContextAsPro
         const SkScalerContextEffects& effects,
         const SkDescriptor* desc,
         SkTypeface* proxyTypeface) const {
+    // https://linear.app/replay/issue/RUN-845
+    SkRecordReplayAssert("SkTypeface_FreeType::onCreateScalerContext");
+
     auto scalerContext = std::make_unique<SkScalerContext_FreeType>(
             *this,
             effects,
