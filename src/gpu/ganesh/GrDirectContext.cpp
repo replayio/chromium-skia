@@ -26,6 +26,7 @@
 #include "src/base/SkAutoMalloc.h"
 #include "src/core/SkCompressedDataUtils.h"
 #include "src/core/SkMipmap.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkTaskGroup.h"
 #include "src/core/SkTraceEvent.h"
 #include "src/gpu/GpuTypesPriv.h"
@@ -93,6 +94,7 @@ GrDirectContext::DirectContextID GrDirectContext::DirectContextID::Next() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrDirectContext::DirectContextID::Next %u", id);
     return DirectContextID(id);
 }
 

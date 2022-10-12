@@ -54,8 +54,13 @@
 
 using namespace skia_private;
 
+#include "src/core/SkRecordReplay.h"
+
 SkTypeface::SkTypeface(const SkFontStyle& style, bool isFixedPitch)
-    : fUniqueID(SkTypefaceCache::NewTypefaceID()), fStyle(style), fIsFixedPitch(isFixedPitch) { }
+    : fUniqueID(SkTypefaceCache::NewTypefaceID()), fStyle(style), fIsFixedPitch(isFixedPitch)
+{
+    SkRecordReplayAssert("[RUN-593-1969] SkTypeface::SkTypeface %u", fUniqueID);
+}
 
 SkTypeface::~SkTypeface() { }
 
