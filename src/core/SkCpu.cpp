@@ -9,6 +9,7 @@
 #include "include/core/SkString.h"
 #include "include/private/base/SkOnce.h"
 #include "src/core/SkCpu.h"
+#include "src/core/SkRecordReplay.h"
 
 #if defined(SK_CPU_X86)
     #if defined(_MSC_VER)
@@ -157,5 +158,13 @@ uint32_t SkCpu::gCachedFeatures = 0;
 
 void SkCpu::CacheRuntimeFeatures() {
     static SkOnce once;
-    once([] { gCachedFeatures = read_cpu_features(); });
+    once([]{
+        // Recording and replaying use the baseline code for every CPU, so a
+        // replay rasterizes exactly what the recording did whatever the CPUs
+        // of the hosts that recorded and replay it.
+        if (SkRecordReplayIsRecordingOrReplaying()) {
+            return;
+        }
+        gCachedFeatures = read_cpu_features();
+    });
 }
