@@ -17,6 +17,7 @@
 #include "src/core/SkPathEnums.h"
 #include "src/core/SkPathPriv.h"
 #include "src/core/SkPathRawShapes.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkSafeMath.h"
 #include "src/core/SkSpanPriv.h"
 
@@ -38,6 +39,7 @@ static uint64_t next_pathdata_unique_id() {
     static std::atomic<uint64_t> nextID{1};
     uint64_t id = nextID.fetch_add(1, std::memory_order_relaxed);
     SkASSERT_RELEASE(id <= kMaxID);
+    SkRecordReplayAssert("[RUN-593-1969] SkPathData/next_pathdata_unique_id %u", (uint32_t)id);
     return id;
 }
 
