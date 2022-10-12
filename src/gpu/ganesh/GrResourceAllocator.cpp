@@ -11,6 +11,7 @@
 #include "include/gpu/GpuTypes.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/ganesh/GrDirectContextPriv.h"
 #include "src/gpu/ganesh/GrGpuResourcePriv.h"
@@ -33,6 +34,7 @@ uint32_t GrResourceAllocator::Interval::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrResourceAllocator::Interval::CreateUniqueID %u", id);
     return id;
 }
 
@@ -42,6 +44,7 @@ uint32_t GrResourceAllocator::Register::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrResourceAllocator::Register::CreateUniqueID %u", id);
     return id;
 }
 #endif
