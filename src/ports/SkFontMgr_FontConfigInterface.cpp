@@ -13,6 +13,7 @@
 #include "include/ports/SkFontMgr_FontConfigInterface.h"
 #include "include/private/base/SkMutex.h"
 #include "src/core/SkFontDescriptor.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkTypefaceCache.h"
 #include "src/ports/SkFontConfigTypeface.h"
@@ -171,6 +172,7 @@ class SkFontMgr_FCI : public SkFontMgr {
 public:
     SkFontMgr_FCI(sk_sp<SkFontConfigInterface> fci)
         : fFCI(std::move(fci))
+        , fMutex("SkFontMgr_FCI")
         , fCache(kMaxSize)
     {}
 
