@@ -11,6 +11,7 @@
 #include "include/gpu/ganesh/GrBackendSurface.h"
 #include "include/private/chromium/GrSurfaceCharacterization.h"
 #include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/gpu/ganesh/GrCaps.h"
 #include "src/gpu/ganesh/GrContextThreadSafeProxyPriv.h"
 #include "src/gpu/ganesh/GrThreadSafeCache.h"
@@ -26,6 +27,7 @@ static uint32_t next_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidGenID);
+    SkRecordReplayAssert("[RUN-593-1969] GrContextThreadSafeProxy/next_id %d", id);
     return id;
 }
 
