@@ -148,6 +148,7 @@ static uint32_t next_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidGenID);
+    SkRecordReplayAssert("[RUN-593-1969] SkTextBlob/next_id %d", id);
     return id;
 }
 
@@ -925,6 +926,9 @@ int get_glyph_run_intercepts(const sktext::GlyphRun& glyphRun,
 
 int SkTextBlob::getIntercepts(const SkScalar bounds[2], SkScalar intervals[],
                               const SkPaint* paint) const {
+    SkRecordReplayAssert("[RUN-757] SkTextBlob::getIntercepts Start %.2f %.2f",
+                         bounds[0], bounds[1]);
+
     std::optional<SkPaint> defaultPaint;
     if (paint == nullptr) {
         defaultPaint.emplace();
@@ -942,6 +946,8 @@ int SkTextBlob::getIntercepts(const SkScalar bounds[2], SkScalar intervals[],
                 glyphRun, *paint, bounds, intervals, &intervalCount);
         }
     }
+
+    SkRecordReplayAssert("[RUN-757] SkTextBlob::getIntercepts Done");
 
     return intervalCount;
 }

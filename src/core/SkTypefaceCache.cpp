@@ -7,6 +7,8 @@
 
 #include "src/core/SkTypefaceCache.h"
 
+#include "src/core/SkRecordReplay.h"
+
 #include "include/core/SkFontStyle.h"
 #include "include/core/SkGraphics.h"
 #include "include/core/SkString.h"
@@ -31,6 +33,8 @@ void SkTypefaceCache::add(sk_sp<SkTypeface> face) {
         fTypefaces.emplace_back(std::move(face));
     }
 }
+
+    SkRecordReplayAssert("[RUN-2612-2639] SkTypefaceCache::add %u", face->uniqueID());
 
 sk_sp<SkTypeface> SkTypefaceCache::findByProcAndRef(FindProc proc, void* ctx) const {
     for (const sk_sp<SkTypeface>& typeface : fTypefaces) {

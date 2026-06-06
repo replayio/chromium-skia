@@ -29,6 +29,8 @@
 #include <iterator>
 #include <utility>
 
+#include "src/core/SkRecordReplay.h"
+
 void SkPixmap::reset() {
     fPixels = nullptr;
     fRowBytes = 0;
@@ -198,6 +200,11 @@ SkColor SkPixmap::getColor(int x, int y) const {
         return needsUnpremul ? SkUnPreMultiply::PMColorToColor(maybePremulColor)
                              : SkSwizzle_BGRA_to_PMColor(maybePremulColor);
     };
+
+    SkRecordReplayAssert(
+            "[RUN-593-1824] SkPixmap::scalePixels %d %d",
+            src.width() <= 0 || src.height() <= 0 || dst.width() <= 0 || dst.height() <= 0,
+            src.width() == dst.width() && src.height() == dst.height());
 
     switch (this->colorType()) {
         case kGray_8_SkColorType: {

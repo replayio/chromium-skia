@@ -17,6 +17,8 @@
 
 #include <cstring>
 
+#include "src/core/SkRecordReplay.h"
+
 std::unique_ptr<SkDescriptor> SkDescriptor::Alloc(size_t length) {
     SkASSERT(length >= sizeof(SkDescriptor) && SkIsAlign4(length));
     void* allocation = ::operator new(length);
@@ -36,6 +38,10 @@ void* SkDescriptor::addEntry(uint32_t tag, size_t length, const void* data) {
     SkASSERT(tag);
     SkASSERT(SkIsAlign4(length));
     SkASSERT(this->findEntry(tag, nullptr) == nullptr);
+
+    // https://linear.app/replay/issue/RUN-845
+    SkRecordReplayAssert("[RUN-845] SkDescriptor::addEntry %u %zu %u",
+                         tag, length, (data && length) ? SkOpts::hash(data, length) : 0);
 
     Entry* entry = (Entry*)((char*)this + fLength);
     entry->fTag = tag;

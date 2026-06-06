@@ -17,6 +17,8 @@
 #include <atomic>
 #include <utility>
 
+#include "src/core/SkRecordReplay.h"
+
 uint32_t SkNextID::ImageID() {
     // We never set the low bit.... see SkPixelRef::genIDIsUnique().
     static std::atomic<uint32_t> nextID{2};
@@ -25,6 +27,9 @@ uint32_t SkNextID::ImageID() {
     do {
         id = nextID.fetch_add(2, std::memory_order_relaxed);
     } while (id == 0);
+
+    id = SkRecordReplayValue("SkNextID::ImageID", id);
+
     return id;
 }
 
@@ -77,6 +82,9 @@ uint32_t SkPixelRef::getGenerationID() const {
         // We can't quite SkASSERT(this->genIDIsUnique()). It could be non-unique
         // if we got here via the else path (pretty unlikely, but possible).
     }
+
+    SkRecordReplayAssert("[RUN-593-1863] SkPixelRef::getGenerationID %u", id);
+
     return id & ~1u;  // Mask off bottom unique bit.
 }
 
@@ -93,9 +101,20 @@ void SkPixelRef::addGenIDChangeListener(sk_sp<SkIDChangeListener> listener) {
 void SkPixelRef::callGenIDChangeListeners() {
     // We don't invalidate ourselves if we think another SkPixelRef is sharing our genID.
     if (this->genIDIsUnique()) {
+        if (!SkRecordReplayAreEventsDisallowed())
+            SkRecordReplayAssert("[RUN-593-1824] SkPixelRef::callGenIDChangeListeners");
+
         fGenIDChangeListeners.changed();
         if (fAddedToCache.exchange(false)) {
-            SkNotifyBitmapGenIDIsStale(this->getGenerationID());
+            if (!SkRecordReplayIsRecordingOrReplaying(/* "leak-references" */) ||
+                !SkRecordReplayAreEventsDisallowed()) {
+                SkNotifyBitmapGenIDIsStale(this->getGenerationID());
+            } else {
+                // Leak and print (so we get a general idea of memory impact)
+                SkRecordReplayPrint(
+                        "[RUN-593-1883] SkPixelRef::callGenIDChangeListeners - [LEAK] SkPixelRef %u",
+                        this->getGenerationID());
+            }
         }
     } else {
         // Listeners get at most one shot, so even though these weren't triggered or not, blow them

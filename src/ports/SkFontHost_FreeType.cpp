@@ -34,6 +34,7 @@
 #include "src/core/SkGlyph.h"
 #include "src/core/SkMask.h"
 #include "src/core/SkMaskGamma.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkScalerContext.h"
 #include "src/ports/SkFontHost_FreeType_common.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
@@ -218,7 +219,7 @@ private:
 };
 
 static SkMutex& f_t_mutex() {
-    static SkMutex& mutex = *(new SkMutex);
+    static SkMutex& mutex = *(new SkMutex("f_t_mutex"));
     return mutex;
 }
 
@@ -636,6 +637,9 @@ std::unique_ptr<SkAdvancedTypefaceMetrics> SkTypeface_FreeType::onGetAdvancedMet
                os2Table->version != 0xFFFF &&
                os2Table->version >= 2)
     {
+    // https://linear.app/replay/issue/RUN-845
+    SkRecordReplayAssert("SkTypeface_FreeType::onCreateScalerContext");
+
         info->fCapHeight = os2Table->sCapHeight;
     }
     info->fBBox = SkIRect::MakeLTRB(face->bbox.xMin, face->bbox.yMax,

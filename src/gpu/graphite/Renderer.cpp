@@ -7,6 +7,8 @@
 
 #include "src/gpu/graphite/Renderer.h"
 
+#include "src/core/SkRecordReplay.h"
+
 #include "src/gpu/graphite/DrawParams.h"
 #include "src/gpu/graphite/UniformManager.h"
 
