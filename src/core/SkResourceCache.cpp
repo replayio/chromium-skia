@@ -127,7 +127,9 @@ SkResourceCache::~SkResourceCache() {
 bool SkResourceCache::find(const Key& key, FindVisitor visitor, void* context) {
     this->checkMessages();
 
-    if (auto found = fHash->find(key)) {
+    auto found = fHash->find(key);
+    SkRecordReplayAssert("[RUN-593] SkResourceCache::find %d", !!found);
+    if (found) {
         Rec* rec = *found;
         if (visitor(*rec, context)) {
             this->moveToHead(rec);  // for our LRU
@@ -174,6 +176,10 @@ void SkResourceCache::add(Rec* rec, void* payload) {
     fHash->set(rec);
     rec->postAddInstall(payload);
 
+    // https://linear.app/replay/issue/RUN-593
+    SkRecordReplayAssert(
+        "[RUN-593] SkResourceCache::add %llu %s", rec->bytesUsed(), rec->getCategory());
+
     if (gDumpCacheTransactions) {
         SkString bytesStr, totalStr;
         make_size_str(rec->bytesUsed(), &bytesStr);
@@ -190,6 +196,10 @@ void SkResourceCache::remove(Rec* rec) {
     SkASSERT(rec->canBePurged());
     size_t used = rec->bytesUsed();
     SkASSERT(used <= fTotalBytesUsed);
+
+    // https://linear.app/replay/issue/RUN-593
+    SkRecordReplayAssert(
+            "[RUN-593] SkResourceCache::remove %d %s", rec->bytesUsed(), rec->getCategory());
 
     this->release(rec);
     fHash->remove(rec->getKey());
@@ -244,6 +254,7 @@ static int gPurgeHitCounter;
 #endif
 
 void SkResourceCache::purgeSharedID(uint64_t sharedID) {
+    SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::purgeSharedID A %llu", sharedID);
     if (0 == sharedID) {
         return;
     }
@@ -257,6 +268,10 @@ void SkResourceCache::purgeSharedID(uint64_t sharedID) {
     Rec* rec = fTail;
     while (rec) {
         Rec* prev = rec->fPrev;
+        SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::purgeSharedID B %llu %d %d",
+                             sharedID,
+                             rec->getKey().getSharedID() == sharedID,
+                             rec->canBePurged());
         if (rec->getKey().getSharedID() == sharedID) {
             // even though the "src" is now dead, caches could still be in-flight, so
             // we have to check if it can be removed.
@@ -269,6 +284,8 @@ void SkResourceCache::purgeSharedID(uint64_t sharedID) {
         }
         rec = prev;
     }
+
+    SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::purgeSharedID C %llu", sharedID);
 
 #ifdef SK_TRACK_PURGE_SHAREDID_HITRATE
     if (found) {
@@ -454,6 +471,8 @@ size_t SkResourceCache::getEffectiveSingleAllocationByteLimit() const {
 void SkResourceCache::checkMessages() {
     TArray<PurgeSharedIDMessage> msgs;
     fPurgeSharedIDInbox.poll(&msgs);
+
+    SkRecordReplayAssert("[RUN-593-1783] SkResourceCache::checkMessages %d", msgs.count());
     for (int i = 0; i < msgs.size(); ++i) {
         this->purgeSharedID(msgs[i].fSharedID);
     }
@@ -519,7 +538,8 @@ void SkResourceCache::CheckMessages() {
 }
 
 bool SkResourceCache::Find(const Key& key, FindVisitor visitor, void* context) {
-    return get_cache()->find(key, visitor, context);
+    bool rv = get_cache()->find(key, visitor, context);
+    return rv;
 }
 
 void SkResourceCache::Add(Rec* rec, void* payload) {
@@ -532,6 +552,10 @@ void SkResourceCache::VisitAll(Visitor visitor, void* context) {
 
 void SkResourceCache::PostPurgeSharedID(uint64_t sharedID) {
     if (sharedID) {
+        // Allow purging shared IDs during GC.
+        if (SkRecordReplayAreEventsDisallowed())
+            SkRecordReplayBeginPassThroughEvents();
+
         SkMessageBus<PurgeSharedIDMessage, uint32_t>::Post(PurgeSharedIDMessage(sharedID));
     }
 }

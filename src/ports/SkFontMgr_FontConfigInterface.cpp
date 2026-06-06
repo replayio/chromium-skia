@@ -152,6 +152,7 @@ class SkFontMgr_FCI : public SkFontMgr {
 public:
     SkFontMgr_FCI(sk_sp<SkFontConfigInterface> fci, std::unique_ptr<SkFontScanner> scanner)
         : fFCI(std::move(fci))
+        , fMutex("SkFontMgr_FCI")
         , fScanner(std::move(scanner))
         , fCache(kMaxSize)
     {
@@ -179,6 +180,14 @@ protected:
                                          const SkFontStyle& requestedStyle) const override
     {
         SkAutoMutexExclusive ama(fMutex);
+
+        // If we've run out of recording data, then following this chain of logic will lead to
+        // hangs, as we await conditional vars on epoll waiters that don't actually exist, held
+        // by threads that are dead (waiting forever.)  Luckily, it seems we can just early out 
+        // and have Chromium use some defaults for us.
+        if (SkRecordReplayHasDivergedFromRecording()) {
+            return nullptr;
+        }
 
         // Check if this request is already in the request cache.
         using Request = SkFontRequestCache::Request;

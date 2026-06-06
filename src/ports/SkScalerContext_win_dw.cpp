@@ -50,6 +50,8 @@
 #include <dwrite_1.h>
 #include <dwrite_3.h>
 
+#include "src/core/SkRecordReplay.h"
+
 namespace {
 static inline const constexpr bool kSkShowTextBlitCoverage = false;
 
@@ -398,6 +400,8 @@ SkScalerContext_DW::SkScalerContext_DW(DWriteFontTypeface& typefaceRef,
         SkMask::kA8_Format == fRec.fMaskFormat &&
         !(fRec.fFlags & SkScalerContext::kGenA8FromLCD_Flag))
     {
+    SkRecordReplayAssert("[RUN-2058] SkScalerContext_DW::getBoundingBox");
+
         // DWRITE_TEXTURE_ALIASED_1x1 is now misnamed, it must also be used with grayscale.
         fTextureType = DWRITE_TEXTURE_ALIASED_1x1;
         fAntiAliasMode = DWRITE_TEXT_ANTIALIAS_MODE_GRAYSCALE;
@@ -1597,6 +1601,9 @@ bool SkScalerContext_DW::generateDWMetrics(const SkGlyph& glyph,
                  "Could not create glyph run analysis.");
         }
     }
+
+    SkRecordReplayAssert("[RUN-2058] SkScalerContext_DW::getBoundingBox #1");
+
     RECT bbox;
     {
         Shared l(maybe_dw_mutex(*typeface));

@@ -34,6 +34,8 @@
 #include "src/utils/win/SkDWrite.h"
 #include "src/utils/win/SkDWriteFontFileStream.h"
 
+#include "src/core/SkRecordReplay.h"
+
 using namespace skia_private;
 
 SkFontStyle DWriteFontTypeface::GetStyle(IDWriteFont* font, IDWriteFontFace* fontFace) {
@@ -441,6 +443,10 @@ SkTypeface::LocalizedStrings* DWriteFontTypeface::onCreateFamilyNameIterator() c
 }
 
 bool DWriteFontTypeface::onGlyphMaskNeedsCurrentColor() const {
+    if (SkRecordReplayAreEventsDisallowed("DWriteFontTypeface::onGlyphMaskNeedsCurrentColor")) {
+        // RUN-2619: We cannot read Windows fonts when replaying.
+        return false;
+    }
     return fDWriteFontFace2 && fDWriteFontFace2->GetColorPaletteCount() > 0;
 }
 
@@ -689,6 +695,8 @@ sk_sp<SkTypeface> DWriteFontTypeface::onMakeClone(const SkFontArguments& args) c
 }
 
 std::unique_ptr<SkStreamAsset> DWriteFontTypeface::onOpenStream(int* ttcIndex) const {
+    SkRecordReplayAssert("[RUN-2058] DWriteFontTypeface::onOpenStream");
+
     *ttcIndex = fDWriteFontFace->GetIndex();
 
     UINT32 numFiles = 0;
