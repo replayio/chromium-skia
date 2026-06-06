@@ -9,8 +9,11 @@
 #include "include/private/base/SkMalloc.h"
 #include "include/private/chromium/SkDiscardableMemory.h"
 
+#include "src/core/SkRecordReplay.h"
+
 SkCachedData::SkCachedData(void* data, size_t size)
-    : fData(data)
+    : fMutex("SkCachedData.fMutex")
+    , fData(data)
     , fSize(size)
     , fRefCnt(1)
     , fStorageType(kMalloc_StorageType)
@@ -21,7 +24,8 @@ SkCachedData::SkCachedData(void* data, size_t size)
 }
 
 SkCachedData::SkCachedData(size_t size, SkDiscardableMemory* dm)
-    : fData(dm->data())
+    : fMutex("SkCachedData.fMutex")
+    , fData(dm->data())
     , fSize(size)
     , fRefCnt(1)
     , fStorageType(kDiscardableMemory_StorageType)
@@ -74,6 +78,8 @@ void SkCachedData::internalUnref(bool fromCache) const {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SkCachedData::inMutexRef(bool fromCache) {
+    SkRecordReplayAssert(
+            "[RUN-2367-2368] SkCachedData::inMutexRef %d %d %d", fRefCnt, fInCache, fromCache);
     if ((1 == fRefCnt) && fInCache) {
         this->inMutexLock();
     }
@@ -86,6 +92,8 @@ void SkCachedData::inMutexRef(bool fromCache) {
 }
 
 bool SkCachedData::inMutexUnref(bool fromCache) {
+    SkRecordReplayAssert(
+            "[RUN-2367-2368] SkCachedData::inMutexUnref %d %d %d", fRefCnt, fInCache, fromCache);
     switch (--fRefCnt) {
         case 0:
             // we're going to be deleted, so we need to be unlocked (for DiscardableMemory)
@@ -119,6 +127,8 @@ void SkCachedData::inMutexLock() {
 
     SkASSERT(!fIsLocked);
     fIsLocked = true;
+
+    SkRecordReplayAssert("[RUN-2367-2368] SkCachedData::inMutexLock %d", (int)fStorageType);
 
     switch (fStorageType) {
         case kMalloc_StorageType:

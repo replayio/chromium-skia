@@ -25,6 +25,8 @@ struct SkFontMetrics;
 
 using namespace sktext;
 
+#include "src/core/SkRecordReplay.h"
+
 bool gSkUseThreadLocalStrikeCaches_IAcknowledgeThisIsIncrediblyExperimental = false;
 
 SkStrikeCache* SkStrikeCache::GlobalStrikeCache() {
@@ -39,6 +41,10 @@ SkStrikeCache* SkStrikeCache::GlobalStrikeCache() {
 auto SkStrikeCache::findOrCreateStrike(const SkStrikeSpec& strikeSpec) -> sk_sp<SkStrike> {
     SkAutoMutexExclusive ac(fLock);
     sk_sp<SkStrike> strike = this->internalFindStrikeOrNull(strikeSpec.descriptor());
+
+    // https://linear.app/replay/issue/RUN-845
+    SkRecordReplayAssert("SkStrikeCache::findOrCreateStrike #1 %u %d", strikeSpec.descriptor().getChecksum(), !!strike);
+
     if (strike == nullptr) {
         strike = this->internalCreateStrike(strikeSpec);
     }

@@ -47,11 +47,18 @@ SkPicture::SkPicture() {
     do {
         fUniqueID = nextID.fetch_add(+1, std::memory_order_relaxed);
     } while (fUniqueID == 0);
+
+    SkRecordReplayAssert("[RUN-593-1863] SkPicture::fUniqueID %u", fUniqueID);
 }
 
 SkPicture::~SkPicture() {
     if (fAddedToCache.load()) {
-        SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
+        if (!SkRecordReplayIsRecordingOrReplaying(/* "leak-references" */) || !SkRecordReplayAreEventsDisallowed()) {
+            SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
+        } else {
+            // Leak and print (so we get a general idea of memory impact)
+            SkRecordReplayPrint("[RUN-593-1863] SkPicture::~SkPicture - [LEAK] SkPicture %u", fUniqueID);
+        }
     }
 }
 

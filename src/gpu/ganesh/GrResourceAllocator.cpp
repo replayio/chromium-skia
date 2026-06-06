@@ -33,6 +33,7 @@ uint32_t GrResourceAllocator::Interval::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrResourceAllocator::Interval::CreateUniqueID %u", id);
     return id;
 }
 
@@ -42,6 +43,7 @@ uint32_t GrResourceAllocator::Register::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrResourceAllocator::Register::CreateUniqueID %u", id);
     return id;
 }
 #endif
