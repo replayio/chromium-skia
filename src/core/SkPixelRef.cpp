@@ -94,9 +94,6 @@ void SkPixelRef::addGenIDChangeListener(sk_sp<SkIDChangeListener> listener) {
 void SkPixelRef::callGenIDChangeListeners() {
     // We don't invalidate ourselves if we think another SkPixelRef is sharing our genID.
     if (this->genIDIsUnique()) {
-        if (!SkRecordReplayAreEventsDisallowed())
-            SkRecordReplayAssert("[RUN-593-1824] SkPixelRef::callGenIDChangeListeners");
-
         fGenIDChangeListeners.changed();
         if (fAddedToCache.exchange(false)) {
             if (!SkRecordReplayIsRecordingOrReplaying(/* "leak-references" */) ||
