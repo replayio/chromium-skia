@@ -146,7 +146,7 @@ private:
     SkTHashMap<const SkImageFilter*, std::vector<Value*>> fImageFilterValues;
     size_t                                                fMaxBytes;
     size_t                                                fCurrentBytes;
-    mutable SkMutex                                       fMutex;
+    mutable SkMutex                                       fMutex{"SkImageFilterCache"};
 };
 
 } // namespace
