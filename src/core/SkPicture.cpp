@@ -17,6 +17,7 @@
 #include "src/core/SkPicturePlayback.h"
 #include "src/core/SkPicturePriv.h"
 #include "src/core/SkPictureRecord.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkResourceCache.h"
 #include <atomic>
 
@@ -49,11 +50,12 @@ SkPicture::SkPicture() {
 
 SkPicture::~SkPicture() {
     if (fAddedToCache.load()) {
-        if (!SkRecordReplayIsRecordingOrReplaying(/* "leak-references" */) || !SkRecordReplayAreEventsDisallowed()) {
-            SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
-        } else {
+        if (SkRecordReplayAreEventsDisallowed() &&
+            SkRecordReplayEnterLeakMemory("SkPicture")) {
             // Leak and print (so we get a general idea of memory impact)
             SkRecordReplayPrint("[RUN-593-1863] SkPicture::~SkPicture - [LEAK] SkPicture %u", fUniqueID);
+        } else {
+            SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
         }
     }
 }

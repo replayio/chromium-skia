@@ -96,14 +96,14 @@ void SkPixelRef::callGenIDChangeListeners() {
     if (this->genIDIsUnique()) {
         fGenIDChangeListeners.changed();
         if (fAddedToCache.exchange(false)) {
-            if (!SkRecordReplayIsRecordingOrReplaying(/* "leak-references" */) ||
-                !SkRecordReplayAreEventsDisallowed()) {
-                SkNotifyBitmapGenIDIsStale(this->getGenerationID());
-            } else {
+            if (SkRecordReplayAreEventsDisallowed() &&
+                SkRecordReplayEnterLeakMemory("SkPixelRef")) {
                 // Leak and print (so we get a general idea of memory impact)
                 SkRecordReplayPrint(
                         "[RUN-593-1883] SkPixelRef::callGenIDChangeListeners - [LEAK] SkPixelRef %u",
                         this->getGenerationID());
+            } else {
+                SkNotifyBitmapGenIDIsStale(this->getGenerationID());
             }
         }
     } else {
