@@ -14,7 +14,9 @@
 #include "include/private/SkMutex.h"
 #include "include/private/SkOnce.h"
 #include "include/private/SkTHash.h"
+#include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkOpts.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkSpecialImage.h"
 #include "src/core/SkTDynamicHash.h"
 #include "src/core/SkTInternalLList.h"
@@ -74,6 +76,7 @@ public:
             this->removeInternal(v);
         }
         Value* v = new Value(key, result, filter);
+        SkRecordReplayAssert("CacheImpl::set %u", filter ? as_IFB(filter)->uniqueID() : 0);
         fLookup.add(v);
         fLRU.addToHead(v);
         fCurrentBytes += result.image() ? result.image()->getSize() : 0;
