@@ -15,6 +15,7 @@
 #include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkLocalMatrixImageFilter.h"
 #include "src/core/SkReadBuffer.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkSpecialImage.h"
 #include "src/core/SkSpecialSurface.h"
 #include "src/core/SkValidationUtils.h"
@@ -240,6 +241,8 @@ skif::FilterResult SkImageFilter_Base::filterImage(const skif::Context& context)
 
     SkImageFilterCacheKey key(fUniqueID, context.mapping().layerMatrix(), context.clipBounds(),
                               srcGenID, srcSubset);
+    SkRecordReplayAssert("SkImageFilter_Base::filterImage %u %d %u %d %d", fUniqueID,
+                         !!context.cache(), srcGenID, srcSubset.width(), srcSubset.height());
     if (context.cache() && context.cache()->get(key, &result)) {
         return result;
     }
