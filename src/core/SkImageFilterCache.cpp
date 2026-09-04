@@ -32,7 +32,9 @@ namespace {
 class CacheImpl : public SkImageFilterCache {
 public:
     typedef SkImageFilterCacheKey Key;
-    CacheImpl(size_t maxBytes) : fMaxBytes(maxBytes), fCurrentBytes(0) { }
+    // Only the Get() singleton is purged by ~SkImageFilter_Base, so only it marks its filters.
+    CacheImpl(size_t maxBytes, bool isGlobal)
+        : fMaxBytes(maxBytes), fCurrentBytes(0), fIsGlobal(isGlobal) { }
     ~CacheImpl() override {
         fLookup.foreach([&](Value* v) { delete v; });
     }
@@ -84,6 +86,9 @@ public:
             values->push_back(v);
         } else {
             fImageFilterValues.set(filter, {v});
+        }
+        if (filter && fIsGlobal) {
+            as_IFB(filter)->notifyAddedToCache();
         }
 
         while (fCurrentBytes > fMaxBytes) {
@@ -149,19 +154,20 @@ private:
     SkTHashMap<const SkImageFilter*, std::vector<Value*>> fImageFilterValues;
     size_t                                                fMaxBytes;
     size_t                                                fCurrentBytes;
+    bool                                                  fIsGlobal;
     mutable SkMutex                                       fMutex{"SkImageFilterCache"};
 };
 
 } // namespace
 
 SkImageFilterCache* SkImageFilterCache::Create(size_t maxBytes) {
-    return new CacheImpl(maxBytes);
+    return new CacheImpl(maxBytes, /*isGlobal=*/false);
 }
 
 SkImageFilterCache* SkImageFilterCache::Get() {
     static SkOnce once;
     static SkImageFilterCache* cache;
 
-    once([]{ cache = SkImageFilterCache::Create(kDefaultCacheSize); });
+    once([]{ cache = new CacheImpl(kDefaultCacheSize, /*isGlobal=*/true); });
     return cache;
 }
