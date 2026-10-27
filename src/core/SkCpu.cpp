@@ -159,7 +159,10 @@ uint32_t SkCpu::gCachedFeatures = 0;
 void SkCpu::CacheRuntimeFeatures() {
     static SkOnce once;
     once([]{
-        if (SkRecordReplayIsReplaying()) {
+        // Recording and replaying use the baseline code for every CPU, so a
+        // replay rasterizes exactly what the recording did whatever the CPUs
+        // of the hosts that recorded and replay it.
+        if (SkRecordReplayIsRecordingOrReplaying()) {
             return;
         }
         gCachedFeatures = read_cpu_features();
