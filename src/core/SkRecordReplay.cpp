@@ -6,6 +6,8 @@
  */
 
 #include "include/private/SkOnce.h"
+#include "src/core/SkImageFilterCache.h"
+#include "src/core/SkResourceCache.h"
 #include "SkRecordReplay.h"
 
 #ifndef _WIN32
@@ -198,6 +200,11 @@ void SkRecordReplayBeginIsolatedDraw() {
 }
 
 void SkRecordReplayEndIsolatedDraw() {
+  if (gRecordReplayIsolatedDrawDepth == 1) {
+    // Still in the draw, so these are its own caches.
+    SkResourceCache::PurgeAll();
+    SkImageFilterCache::Get()->purge();
+  }
   gRecordReplayIsolatedDrawDepth--;
 }
 

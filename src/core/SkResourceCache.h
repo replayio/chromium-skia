@@ -206,6 +206,10 @@ public:
      *  changed at runtime with setTotalByteLimit.
      */
     explicit SkResourceCache(size_t byteLimit);
+    // A malloc-backed cache whose inbox isn't on the message bus, for Replay's
+    // in-process draws (see get_cache() in SkResourceCache.cpp).
+    struct RecordReplayIsolated {};
+    SkResourceCache(size_t byteLimit, RecordReplayIsolated);
     ~SkResourceCache();
 
     /**

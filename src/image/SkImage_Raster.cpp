@@ -122,6 +122,10 @@ public:
         // lifetime of derived/cached resources to the image. In this case, we only want cached
         // data (eg mips) tied to the lifetime of the underlying pixelRef.
         SkASSERT(fBitmap.pixelRef());
+        // See SkImage_Base::notifyAddedToRasterCache().
+        if (SkRecordReplayInIsolatedDraw()) {
+            return;
+        }
         fBitmap.pixelRef()->notifyAddedToCache();
     }
 
