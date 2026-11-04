@@ -111,8 +111,7 @@ void SkRecordReplayWarning(const char* format, ...) {
 void SkRecordReplayAssert(const char* format, ...) {
   // As recordreplay::AssertMaybeEventsDisallowed in Chromium: code that runs with
   // recorded events disallowed, such as Replay's in-process draws, doesn't assert.
-  if (EnsureInitialized() &&
-      !(gRecordReplayAreEventsDisallowed && gRecordReplayAreEventsDisallowed())) {
+  if (EnsureInitialized() && !SkRecordReplayAreEventsDisallowedByDriver()) {
     va_list ap;
     va_start(ap, format);
     gRecordReplayAssert(format, ap);
@@ -185,6 +184,25 @@ bool SkRecordReplayHasDivergedFromRecording(void) {
   return EnsureInitialized() && 
     gRecordReplayIsReplaying() && 
     gRecordReplayHasDivergedFromRecording();
+}
+
+bool SkRecordReplayAreEventsDisallowedByDriver() {
+  return EnsureInitialized() && gRecordReplayAreEventsDisallowed &&
+         gRecordReplayAreEventsDisallowed();
+}
+
+static thread_local int gRecordReplayIsolatedDrawDepth;
+
+void SkRecordReplayBeginIsolatedDraw() {
+  gRecordReplayIsolatedDrawDepth++;
+}
+
+void SkRecordReplayEndIsolatedDraw() {
+  gRecordReplayIsolatedDrawDepth--;
+}
+
+bool SkRecordReplayInIsolatedDraw() {
+  return gRecordReplayIsolatedDrawDepth > 0;
 }
 
 bool SkRecordReplayAreEventsUnavailable(const char* why) {

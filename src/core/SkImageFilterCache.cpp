@@ -216,11 +216,11 @@ SkImageFilterCache* SkImageFilterCache::Create(size_t maxBytes) {
 }
 
 SkImageFilterCache* SkImageFilterCache::Get() {
-    // Code that runs with recorded events disallowed, such as Replay's in-process
-    // draws while replaying, skips the global cache's ordered lock, so it can't
-    // share that cache with recorded threads. It gets a cache of its own, with a
-    // plain mutex and filters that aren't marked as cached.
-    if (SkRecordReplayAreEventsDisallowed()) {
+    // Replay's in-process draws run with recorded events disallowed, which skips
+    // the global cache's ordered lock, and recorded threads must not see what
+    // they cache. They get a cache of their own, with a plain mutex and filters
+    // that aren't marked as cached.
+    if (SkRecordReplayInIsolatedDraw()) {
         static SkOnce recordReplayDisallowedOnce;
         static SkImageFilterCache* recordReplayDisallowedCache;
         recordReplayDisallowedOnce([]{

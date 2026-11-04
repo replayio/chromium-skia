@@ -20,6 +20,11 @@ extern bool SkRecordReplayFeatureEnabled(const char* feature, const char* subfea
 extern bool SkRecordReplayIsRecordingOrReplaying(const char* feature = nullptr,
                                                  const char* subfeature = nullptr);
 extern bool SkRecordReplayAreEventsDisallowed(const char* why = nullptr);
+// Whether the driver disallows recorded events on this thread, regardless of
+// the disallow-events feature.
+extern bool SkRecordReplayAreEventsDisallowedByDriver();
+// Whether this thread is in a draw started by SkRecordReplayBeginIsolatedDraw().
+extern bool SkRecordReplayInIsolatedDraw();
 
 // Gate a LeakMemory intervention and breadcrumb it into crash-report diagnostics.
 inline bool SkRecordReplayEnterLeakMemory(const char* label) {
