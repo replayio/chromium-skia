@@ -70,4 +70,8 @@ public:
     SkDEBUGCODE(virtual int count() const = 0;)
 };
 
+// While recording or replaying, ~SkImageFilter_Base queues the unique ID of a filter that the
+// global cache holds results for, and the cache purges them in set().
+void SkRecordReplayQueueImageFilterPurge(uint32_t uniqueID);
+
 #endif
