@@ -109,7 +109,10 @@ void SkRecordReplayWarning(const char* format, ...) {
 }
 
 void SkRecordReplayAssert(const char* format, ...) {
-  if (EnsureInitialized()) {
+  // As recordreplay::AssertMaybeEventsDisallowed in Chromium: code that runs with
+  // recorded events disallowed, such as Replay's in-process draws, doesn't assert.
+  if (EnsureInitialized() &&
+      !(gRecordReplayAreEventsDisallowed && gRecordReplayAreEventsDisallowed())) {
     va_list ap;
     va_start(ap, format);
     gRecordReplayAssert(format, ap);

@@ -49,8 +49,9 @@ class CacheImpl : public SkImageFilterCache {
 public:
     typedef SkImageFilterCacheKey Key;
     // Only the Get() singleton is purged by ~SkImageFilter_Base, so only it marks its filters.
-    CacheImpl(size_t maxBytes, bool isGlobal)
-        : fMaxBytes(maxBytes), fCurrentBytes(0), fIsGlobal(isGlobal) { }
+    CacheImpl(size_t maxBytes, bool isGlobal, bool recordReplayOrdered = true)
+        : fMaxBytes(maxBytes), fCurrentBytes(0), fIsGlobal(isGlobal)
+        , fMutex(recordReplayOrdered ? "SkImageFilterCache" : nullptr) { }
     ~CacheImpl() override {
         fLookup.foreach([&](Value* v) { delete v; });
     }
@@ -205,7 +206,7 @@ private:
     size_t                                                fMaxBytes;
     size_t                                                fCurrentBytes;
     bool                                                  fIsGlobal;
-    mutable SkMutex                                       fMutex{"SkImageFilterCache"};
+    mutable SkMutex                                       fMutex;
 };
 
 } // namespace
@@ -215,6 +216,20 @@ SkImageFilterCache* SkImageFilterCache::Create(size_t maxBytes) {
 }
 
 SkImageFilterCache* SkImageFilterCache::Get() {
+    // Code that runs with recorded events disallowed, such as Replay's in-process
+    // draws while replaying, skips the global cache's ordered lock, so it can't
+    // share that cache with recorded threads. It gets a cache of its own, with a
+    // plain mutex and filters that aren't marked as cached.
+    if (SkRecordReplayAreEventsDisallowed()) {
+        static SkOnce recordReplayDisallowedOnce;
+        static SkImageFilterCache* recordReplayDisallowedCache;
+        recordReplayDisallowedOnce([]{
+            recordReplayDisallowedCache = new CacheImpl(kDefaultCacheSize, /*isGlobal=*/false,
+                                                        /*recordReplayOrdered=*/false);
+        });
+        return recordReplayDisallowedCache;
+    }
+
     static SkOnce once;
     static SkImageFilterCache* cache;
 

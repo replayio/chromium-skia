@@ -22,7 +22,9 @@ class SK_CAPABILITY("mutex") SkMutex {
 public:
     constexpr SkMutex() = default;
     SkMutex(const char* ordered_name) {
-      fOrderedLockId = SkRecordReplayCreateOrderedLock(ordered_name);
+      if (ordered_name) {
+        fOrderedLockId = SkRecordReplayCreateOrderedLock(ordered_name);
+      }
     }
 
     ~SkMutex() {

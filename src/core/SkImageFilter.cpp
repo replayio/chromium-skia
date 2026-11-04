@@ -144,6 +144,15 @@ static int32_t next_image_filter_unique_id() {
     static std::atomic<int32_t> nextID{1};
 
     int32_t id;
+    // See SkNextID::ImageID().
+    if (SkRecordReplayAreEventsDisallowed()) {
+        static std::atomic<int32_t> recordReplayDisallowedNextID{0x40000000};
+        do {
+            id = recordReplayDisallowedNextID.fetch_add(1, std::memory_order_relaxed);
+        } while (id == 0);
+        return id;
+    }
+
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == 0);
