@@ -168,11 +168,8 @@ SkImageFilter_Base::SkImageFilter_Base(sk_sp<SkImageFilter> const* inputs,
 
 SkImageFilter_Base::~SkImageFilter_Base() {
     if (fAddedToCache.load()) {
-        if (SkRecordReplayAreEventsDisallowed() &&
-            SkRecordReplayEnterLeakMemory("SkImageFilter")) {
-            // Leak and print (so we get a general idea of memory impact)
-            SkRecordReplayPrint("SkImageFilter_Base::~SkImageFilter_Base - [LEAK] SkImageFilter %u",
-                                fUniqueID);
+        if (SkRecordReplayIsRecordingOrReplaying()) {
+            SkRecordReplayQueueImageFilterPurge(fUniqueID);
         } else {
             SkImageFilterCache::Get()->purgeByImageFilter(this);
         }

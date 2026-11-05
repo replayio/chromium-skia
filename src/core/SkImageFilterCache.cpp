@@ -13,6 +13,7 @@
 #include "include/core/SkRefCnt.h"
 #include "include/private/SkMutex.h"
 #include "include/private/SkOnce.h"
+#include "include/private/SkSpinlock.h"
 #include "include/private/SkTHash.h"
 #include "src/core/SkImageFilter_Base.h"
 #include "src/core/SkOpts.h"
@@ -26,6 +27,21 @@
 #else
   enum { kDefaultCacheSize = 128 * 1024 * 1024 };
 #endif
+
+// The last reference to a filter can drop on any thread, including the GC's sweeper while events
+// are disallowed, so which thread destroys it isn't recorded. While recording or replaying, the
+// destructor only queues the filter's ID here, without taking the cache's ordered lock, and set()
+// purges the queued IDs at a recorded point instead: the replay purges the IDs the recording did.
+static SkSpinlock gRecordReplayQueuedPurgesLock;
+static std::vector<uint32_t>* gRecordReplayQueuedPurges;
+
+void SkRecordReplayQueueImageFilterPurge(uint32_t uniqueID) {
+    SkAutoSpinlock lock(gRecordReplayQueuedPurgesLock);
+    if (!gRecordReplayQueuedPurges) {
+        gRecordReplayQueuedPurges = new std::vector<uint32_t>();
+    }
+    gRecordReplayQueuedPurges->push_back(uniqueID);
+}
 
 namespace {
 
@@ -74,6 +90,9 @@ public:
     void set(const Key& key, const SkImageFilter* filter,
              const skif::FilterResult& result) override {
         SkAutoMutexExclusive mutex(fMutex);
+        if (fIsGlobal && SkRecordReplayIsRecordingOrReplaying()) {
+            this->recordReplayPurgeQueued();
+        }
         if (Value* v = fLookup.find(key)) {
             this->removeInternal(v);
         }
@@ -127,6 +146,37 @@ public:
 
     SkDEBUGCODE(int count() const override { return fLookup.count(); })
 private:
+    void recordReplayPurgeQueued() {
+        std::vector<uint32_t> queued;
+        {
+            SkAutoSpinlock lock(gRecordReplayQueuedPurgesLock);
+            if (gRecordReplayQueuedPurges) {
+                queued.swap(*gRecordReplayQueuedPurges);
+            }
+        }
+        size_t count = SkRecordReplayValue("CacheImpl::recordReplayPurgeQueued count",
+                                           queued.size());
+        if (!count) {
+            return;
+        }
+        SkTHashSet<uint32_t> ids;
+        for (size_t i = 0; i < count; i++) {
+            ids.add(SkRecordReplayValue("CacheImpl::recordReplayPurgeQueued id",
+                                        i < queued.size() ? queued[i] : 0));
+        }
+        // A replayed filter can still be alive when the recording's was purged, but nothing
+        // filters with it again.
+        std::vector<Value*> purged;
+        fLookup.foreach([&](Value* v) {
+            if (ids.contains(v->fKey.fUniqueID)) {
+                purged.push_back(v);
+            }
+        });
+        for (Value* v : purged) {
+            this->removeInternal(v);
+        }
+    }
+
     void removeInternal(Value* v) {
         if (v->fFilter) {
             if (auto* values = fImageFilterValues.find(v->fFilter)) {
