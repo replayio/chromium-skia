@@ -41,9 +41,11 @@ enum {
 
 SkPicture::SkPicture() {
     static std::atomic<uint32_t> nextID{1};
-    do {
-        fUniqueID = nextID.fetch_add(+1, std::memory_order_relaxed);
-    } while (fUniqueID == 0);
+    if (!SkRecordReplayTakeIsolatedId(&fUniqueID)) {
+        do {
+            fUniqueID = nextID.fetch_add(+1, std::memory_order_relaxed);
+        } while (fUniqueID == 0);
+    }
 
     SkRecordReplayAssert("[RUN-593-1863] SkPicture::fUniqueID %u", fUniqueID);
 }

@@ -8,6 +8,8 @@
 #ifndef SkRecordReplay_DEFINED
 #define SkRecordReplay_DEFINED
 
+#include <atomic>
+
 extern void SkRecordReplayPrint(const char* format, ...);
 extern void SkRecordReplayWarning(const char* format, ...);
 extern void SkRecordReplayAssert(const char* format, ...);
@@ -25,6 +27,20 @@ extern bool SkRecordReplayAreEventsDisallowed(const char* why = nullptr);
 extern bool SkRecordReplayAreEventsDisallowedByDriver();
 // Whether this thread is in a draw started by SkRecordReplayBeginIsolatedDraw().
 extern bool SkRecordReplayInIsolatedDraw();
+
+// Code that runs with recorded events disallowed, such as Replay's in-process
+// draws while replaying, takes IDs from a range of its own: an ID it took from
+// a shared counter would be given again to an object a recorded thread creates
+// later. Sets |id| and returns true if events are disallowed.
+template <typename T>
+inline bool SkRecordReplayTakeIsolatedId(T* id) {
+  if (!SkRecordReplayAreEventsDisallowedByDriver()) {
+    return false;
+  }
+  static std::atomic<T> next{static_cast<T>(0x20000000)};
+  *id = next.fetch_add(1, std::memory_order_relaxed);
+  return true;
+}
 
 // Gate a LeakMemory intervention and breadcrumb it into crash-report diagnostics.
 inline bool SkRecordReplayEnterLeakMemory(const char* label) {

@@ -481,9 +481,14 @@ uint32_t SkPathRef::genID() const {
             fGenerationID = kEmptyGenID;
         } else {
             static std::atomic<uint32_t> nextID{kEmptyGenID + 1};
-            do {
-                fGenerationID = nextID.fetch_add(1, std::memory_order_relaxed) & kMask;
-            } while (fGenerationID == 0 || fGenerationID == kEmptyGenID);
+            uint32_t id;
+            if (SkRecordReplayTakeIsolatedId(&id)) {
+                fGenerationID = id & kMask;
+            } else {
+                do {
+                    fGenerationID = nextID.fetch_add(1, std::memory_order_relaxed) & kMask;
+                } while (fGenerationID == 0 || fGenerationID == kEmptyGenID);
+            }
         }
         SkRecordReplayAssert("[RUN-593-1969] SkPathRef::genID %u", fGenerationID);
     }
