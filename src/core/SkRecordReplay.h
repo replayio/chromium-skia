@@ -9,6 +9,7 @@
 #define SkRecordReplay_DEFINED
 
 #include <atomic>
+#include <limits>
 
 extern void SkRecordReplayPrint(const char* format, ...);
 extern void SkRecordReplayWarning(const char* format, ...);
@@ -31,14 +32,18 @@ extern bool SkRecordReplayInIsolatedDraw();
 // Code that runs with recorded events disallowed, such as Replay's in-process
 // draws while replaying, takes IDs from a range of its own: an ID it took from
 // a shared counter would be given again to an object a recorded thread creates
-// later. Sets |id| and returns true if events are disallowed.
+// later. Its IDs count down from the largest value, and shared counters count
+// up, so they would only meet where a counter wraps. Never takes 0. Sets |id|
+// and returns true if events are disallowed.
 template <typename T>
 inline bool SkRecordReplayTakeIsolatedId(T* id) {
   if (!SkRecordReplayAreEventsDisallowedByDriver()) {
     return false;
   }
-  static std::atomic<T> next{static_cast<T>(0x20000000)};
-  *id = next.fetch_add(1, std::memory_order_relaxed);
+  static std::atomic<T> next{std::numeric_limits<T>::max()};
+  do {
+    *id = next.fetch_sub(1, std::memory_order_relaxed);
+  } while (*id == 0);
   return true;
 }
 

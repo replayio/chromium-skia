@@ -25,9 +25,10 @@ uint32_t SkNextID::ImageID() {
     // draws while replaying, takes IDs from a range of its own: an ID it took from
     // nextID would also be given to an object created later on a recorded thread.
     if (SkRecordReplayAreEventsDisallowedByDriver()) {
-        static std::atomic<uint32_t> recordReplayDisallowedNextID{0x80000000};
+        // Counts down from the top, see SkRecordReplayTakeIsolatedId().
+        static std::atomic<uint32_t> recordReplayDisallowedNextID{0xfffffffe};
         do {
-            id = recordReplayDisallowedNextID.fetch_add(2, std::memory_order_relaxed);
+            id = recordReplayDisallowedNextID.fetch_sub(2, std::memory_order_relaxed);
         } while (id == 0);
         return id;
     }

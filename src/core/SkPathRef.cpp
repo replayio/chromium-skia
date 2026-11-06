@@ -483,6 +483,9 @@ uint32_t SkPathRef::genID() const {
             static std::atomic<uint32_t> nextID{kEmptyGenID + 1};
             uint32_t id;
             if (SkRecordReplayTakeIsolatedId(&id)) {
+                while ((id & kMask) == 0 || (id & kMask) == kEmptyGenID) {
+                    SkRecordReplayTakeIsolatedId(&id);
+                }
                 fGenerationID = id & kMask;
             } else {
                 do {
