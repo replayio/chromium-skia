@@ -501,7 +501,7 @@ static SkResourceCache* get_cache() {
     // resource_cache_mutex() is always held when this is called, so we don't need to be fancy in here.
     resource_cache_mutex().assertHeld();
     // Replay's in-process draws, which run with recorded events disallowed,
-    // use a cache of their own, emptied after each draw: what they cache must
+    // use a cache of their own, which only they use: what they cache must
     // not change what recorded threads find in the global cache, and nothing
     // they cache may post purge messages to recorded threads' inboxes.
     if (SkRecordReplayInIsolatedDraw()) {
