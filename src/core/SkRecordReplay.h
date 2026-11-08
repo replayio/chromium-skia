@@ -29,28 +29,29 @@ extern bool SkRecordReplayAreEventsDisallowedByDriver();
 // Whether this thread is in a draw started by SkRecordReplayBeginIsolatedDraw().
 extern bool SkRecordReplayInIsolatedDraw();
 
-// Isolated draws (SkRecordReplayBeginIsolatedDraw) take IDs from a range of
-// their own: an ID they took from a shared counter would be given again to an
-// object a recorded thread creates later. Their IDs count down from the
-// largest value, and shared counters count up, so they would only meet where a
-// counter wraps. Never takes 0. Sets |id| and returns true in an isolated
-// draw.
 #if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
 // Checks of what isolated draws touch (record_replay_isolated_draw_checks):
-// prints |what| in an isolated draw, or, for the second, wherever recorded
-// events are disallowed outside one.
+// prints |what| in an isolated draw, or, for the second, outside one.
 extern void SkRecordReplayIsolatedDrawCheck(const char* what, const void* address);
 extern void SkRecordReplayDisallowedIdCheck(const char* what, const void* address);
 #endif
 
+// Code that runs with recorded events disallowed, isolated draws among it,
+// takes IDs from a range of its own: an ID it took from a shared counter
+// would be given again to an object a recorded thread creates later, and
+// some of that code (replay-only commands, unordered tasks) doesn't run at the
+// same points when recording and replaying. Its IDs count down from the
+// largest value, and shared counters count up, so they would only meet where
+// a counter wraps. Never takes 0. Sets |id| and returns true if events are
+// disallowed.
 template <typename T>
 inline bool SkRecordReplayTakeIsolatedId(T* id) {
-  if (!SkRecordReplayInIsolatedDraw()) {
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-    SkRecordReplayDisallowedIdCheck("Skia ID", __builtin_return_address(0));
-#endif
+  if (!SkRecordReplayAreEventsDisallowedByDriver()) {
     return false;
   }
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+  SkRecordReplayDisallowedIdCheck("Skia ID", __builtin_return_address(0));
+#endif
   static std::atomic<T> next{std::numeric_limits<T>::max()};
   do {
     *id = next.fetch_sub(1, std::memory_order_relaxed);

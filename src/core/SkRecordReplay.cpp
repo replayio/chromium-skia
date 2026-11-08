@@ -218,9 +218,8 @@ void SkRecordReplayIsolatedDrawCheck(const char* what, const void* address) {
 }
 
 void SkRecordReplayDisallowedIdCheck(const char* what, const void* address) {
-  if (!SkRecordReplayInIsolatedDraw() && SkRecordReplayAreEventsDisallowedByDriver() &&
-      SkRecordReplayCheckBudget()) {
-    SkRecordReplayPrint("IsolatedDrawCheck %s with events disallowed caller=%p", what, address);
+  if (!SkRecordReplayInIsolatedDraw() && SkRecordReplayCheckBudget()) {
+    SkRecordReplayPrint("IsolatedDrawCheck %s outside an isolated draw caller=%p", what, address);
   }
 }
 #endif

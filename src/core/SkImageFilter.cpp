@@ -145,8 +145,10 @@ static int32_t next_image_filter_unique_id() {
 
     int32_t id;
     // See SkNextID::ImageID().
-    if (SkRecordReplayInIsolatedDraw()) {
-        // Counts down from the top, see SkRecordReplayTakeIsolatedId().
+    if (SkRecordReplayAreEventsDisallowedByDriver()) {
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+        SkRecordReplayDisallowedIdCheck("image filter ID", __builtin_return_address(0));
+#endif
         static std::atomic<int32_t> recordReplayDisallowedNextID{
                 std::numeric_limits<int32_t>::max()};
         do {
@@ -155,9 +157,6 @@ static int32_t next_image_filter_unique_id() {
         return id;
     }
 
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-    SkRecordReplayDisallowedIdCheck("image filter ID", __builtin_return_address(0));
-#endif
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == 0);
