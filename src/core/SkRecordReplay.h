@@ -36,15 +36,20 @@ extern void SkRecordReplayIsolatedDrawCheck(const char* what, const void* addres
 extern void SkRecordReplayDisallowedIdCheck(const char* what, const void* address);
 #endif
 
-// Code that runs with recorded events disallowed, isolated draws among it,
-// takes IDs from a range of its own: an ID it took from a shared counter
-// would be given again to an object a recorded thread creates later, and
-// some of that code (replay-only commands, unordered tasks) doesn't run at the
-// same points when recording and replaying. Its IDs count down from the
-// largest value, and shared counters count up, so they would only meet where
-// a counter wraps. Never takes 0. Sets |id| and returns true if events are
-// disallowed.
-template <typename T>
+// Code that runs with recorded events disallowed takes IDs from ranges of its
+// own: an ID it took from a shared counter would be given again to an object
+// a recorded thread creates later, and some of that code (replay-only
+// commands, unordered tasks) doesn't run at the same points when recording
+// and replaying. Isolated draws, which run only when replaying, have a range
+// apart from the rest of that code, whose IDs would otherwise differ between
+// recording and replaying once a draw ran. Both count down, isolated draws
+// from the largest value and other code from half of it, while shared
+// counters count up, so they would only meet where a counter wraps. Takes
+// multiples of |Step| greater than |Reserved|. Sets |id| and returns true if
+// events are disallowed. IDs taken lazily, such as pixel ref and path
+// generation IDs, come from these ranges also for objects that recorded
+// threads use later.
+template <typename T, T Step = 1, T Reserved = 0>
 inline bool SkRecordReplayTakeIsolatedId(T* id) {
   if (!SkRecordReplayAreEventsDisallowedByDriver()) {
     return false;
@@ -52,10 +57,13 @@ inline bool SkRecordReplayTakeIsolatedId(T* id) {
 #if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
   SkRecordReplayDisallowedIdCheck("Skia ID", __builtin_return_address(0));
 #endif
-  static std::atomic<T> next{std::numeric_limits<T>::max()};
+  constexpr T kTop = std::numeric_limits<T>::max() / Step * Step;
+  static std::atomic<T> drawNext{kTop};
+  static std::atomic<T> disallowedNext{kTop / 2 / Step * Step};
+  std::atomic<T>& next = SkRecordReplayInIsolatedDraw() ? drawNext : disallowedNext;
   do {
-    *id = next.fetch_sub(1, std::memory_order_relaxed);
-  } while (*id == 0);
+    *id = next.fetch_sub(Step, std::memory_order_relaxed);
+  } while (*id <= Reserved);
   return true;
 }
 

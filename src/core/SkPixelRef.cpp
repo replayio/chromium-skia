@@ -21,16 +21,9 @@ uint32_t SkNextID::ImageID() {
     static std::atomic<uint32_t> nextID{2};
 
     uint32_t id;
-    // Code that runs with recorded events disallowed takes IDs from a range of its
+    // Code that runs with recorded events disallowed takes IDs from ranges of its
     // own, see SkRecordReplayTakeIsolatedId().
-    if (SkRecordReplayAreEventsDisallowedByDriver()) {
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-        SkRecordReplayDisallowedIdCheck("SkNextID::ImageID", __builtin_return_address(0));
-#endif
-        static std::atomic<uint32_t> recordReplayDisallowedNextID{0xfffffffe};
-        do {
-            id = recordReplayDisallowedNextID.fetch_sub(2, std::memory_order_relaxed);
-        } while (id == 0);
+    if (SkRecordReplayTakeIsolatedId<uint32_t, 2>(&id)) {
         return id;
     }
 

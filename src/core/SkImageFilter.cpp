@@ -145,15 +145,7 @@ static int32_t next_image_filter_unique_id() {
 
     int32_t id;
     // See SkNextID::ImageID().
-    if (SkRecordReplayAreEventsDisallowedByDriver()) {
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-        SkRecordReplayDisallowedIdCheck("image filter ID", __builtin_return_address(0));
-#endif
-        static std::atomic<int32_t> recordReplayDisallowedNextID{
-                std::numeric_limits<int32_t>::max()};
-        do {
-            id = recordReplayDisallowedNextID.fetch_sub(1, std::memory_order_relaxed);
-        } while (id == 0);
+    if (SkRecordReplayTakeIsolatedId(&id)) {
         return id;
     }
 
