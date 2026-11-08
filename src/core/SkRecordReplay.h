@@ -29,15 +29,15 @@ extern bool SkRecordReplayAreEventsDisallowedByDriver();
 // Whether this thread is in a draw started by SkRecordReplayBeginIsolatedDraw().
 extern bool SkRecordReplayInIsolatedDraw();
 
-// Code that runs with recorded events disallowed, such as Replay's in-process
-// draws while replaying, takes IDs from a range of its own: an ID it took from
-// a shared counter would be given again to an object a recorded thread creates
-// later. Its IDs count down from the largest value, and shared counters count
-// up, so they would only meet where a counter wraps. Never takes 0. Sets |id|
-// and returns true if events are disallowed.
+// Isolated draws (SkRecordReplayBeginIsolatedDraw) take IDs from a range of
+// their own: an ID they took from a shared counter would be given again to an
+// object a recorded thread creates later. Their IDs count down from the
+// largest value, and shared counters count up, so they would only meet where a
+// counter wraps. Never takes 0. Sets |id| and returns true in an isolated
+// draw.
 template <typename T>
 inline bool SkRecordReplayTakeIsolatedId(T* id) {
-  if (!SkRecordReplayAreEventsDisallowedByDriver()) {
+  if (!SkRecordReplayInIsolatedDraw()) {
     return false;
   }
   static std::atomic<T> next{std::numeric_limits<T>::max()};

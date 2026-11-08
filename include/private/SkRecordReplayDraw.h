@@ -18,9 +18,8 @@
 SK_API void SkRecordReplayBeginIsolatedDraw();
 SK_API void SkRecordReplayEndIsolatedDraw();
 
-// Whether the driver disallows recorded events on this thread, regardless of
-// the disallow-events feature. Code that runs with events disallowed takes
-// IDs from ranges of its own (in Skia and in Chromium's cc).
-SK_API bool SkRecordReplayAreEventsDisallowedByDriver();
+// Whether this thread is in an isolated draw. Code there takes IDs from
+// ranges of its own (in Skia and in Chromium's cc) and uses caches of its own.
+SK_API bool SkRecordReplayInIsolatedDraw();
 
 #endif
