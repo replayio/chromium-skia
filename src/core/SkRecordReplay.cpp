@@ -205,6 +205,26 @@ bool SkRecordReplayInIsolatedDraw() {
   return gRecordReplayIsolatedDrawDepth > 0;
 }
 
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+static bool SkRecordReplayCheckBudget() {
+  static std::atomic<int> count;
+  return count++ < 2000;
+}
+
+void SkRecordReplayIsolatedDrawCheck(const char* what, const void* address) {
+  if (SkRecordReplayInIsolatedDraw() && SkRecordReplayCheckBudget()) {
+    SkRecordReplayPrint("IsolatedDrawCheck %s caller=%p", what, address);
+  }
+}
+
+void SkRecordReplayDisallowedIdCheck(const char* what, const void* address) {
+  if (!SkRecordReplayInIsolatedDraw() && SkRecordReplayAreEventsDisallowedByDriver() &&
+      SkRecordReplayCheckBudget()) {
+    SkRecordReplayPrint("IsolatedDrawCheck %s with events disallowed caller=%p", what, address);
+  }
+}
+#endif
+
 bool SkRecordReplayAreEventsUnavailable(const char* why) {
   return SkRecordReplayAreEventsDisallowed(why) ||
     SkRecordReplayHasDivergedFromRecording();

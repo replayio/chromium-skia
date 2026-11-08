@@ -33,6 +33,9 @@ uint32_t SkNextID::ImageID() {
         return id;
     }
 
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+    SkRecordReplayDisallowedIdCheck("SkNextID::ImageID", __builtin_return_address(0));
+#endif
     do {
         id = nextID.fetch_add(2, std::memory_order_relaxed);
     } while (id == 0);

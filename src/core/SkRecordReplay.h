@@ -35,9 +35,20 @@ extern bool SkRecordReplayInIsolatedDraw();
 // largest value, and shared counters count up, so they would only meet where a
 // counter wraps. Never takes 0. Sets |id| and returns true in an isolated
 // draw.
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+// Checks of what isolated draws touch (record_replay_isolated_draw_checks):
+// prints |what| in an isolated draw, or, for the second, wherever recorded
+// events are disallowed outside one.
+extern void SkRecordReplayIsolatedDrawCheck(const char* what, const void* address);
+extern void SkRecordReplayDisallowedIdCheck(const char* what, const void* address);
+#endif
+
 template <typename T>
 inline bool SkRecordReplayTakeIsolatedId(T* id) {
   if (!SkRecordReplayInIsolatedDraw()) {
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+    SkRecordReplayDisallowedIdCheck("Skia ID", __builtin_return_address(0));
+#endif
     return false;
   }
   static std::atomic<T> next{std::numeric_limits<T>::max()};

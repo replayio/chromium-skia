@@ -17,6 +17,9 @@
 extern int SkRecordReplayCreateOrderedLock(const char* ordered_name);
 extern void SkRecordReplayOrderedLock(int lock);
 extern void SkRecordReplayOrderedUnlock(int lock);
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+extern void SkRecordReplayIsolatedDrawCheck(const char* what, const void* address);
+#endif
 
 class SK_CAPABILITY("mutex") SkMutex {
 public:
@@ -32,6 +35,11 @@ public:
     }
 
     void acquire() SK_ACQUIRE() {
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+        if (fOrderedLockId) {
+            SkRecordReplayIsolatedDrawCheck("ordered SkMutex", __builtin_return_address(0));
+        }
+#endif
         if (fOrderedLockId) {
           SkRecordReplayOrderedLock(fOrderedLockId);
         } else {

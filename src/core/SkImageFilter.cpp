@@ -155,6 +155,9 @@ static int32_t next_image_filter_unique_id() {
         return id;
     }
 
+#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
+    SkRecordReplayDisallowedIdCheck("image filter ID", __builtin_return_address(0));
+#endif
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == 0);
