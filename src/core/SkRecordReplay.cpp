@@ -211,22 +211,22 @@ static bool SkRecordReplayIsolatedDrawAssertsEnabled() {
   return enabled;
 }
 
-static bool SkRecordReplayAssertBudget() {
+static bool SkRecordReplayNoteBudget() {
   static std::atomic<int> count;
   return count++ < 2000;
 }
 
 void SkRecordReplayIsolatedDrawAssert(const char* what, const void* address) {
-  if (SkRecordReplayIsolatedDrawAssertsEnabled() && SkRecordReplayInIsolatedDraw() &&
-      SkRecordReplayAssertBudget()) {
-    SkRecordReplayPrint("IsolatedDrawAssert %s caller=%p", what, address);
+  if (SkRecordReplayIsolatedDrawAssertsEnabled() && SkRecordReplayInIsolatedDraw()) {
+    SkRecordReplayPrint("IsolatedDrawAssert failed: %s caller=%p", what, address);
+    abort();
   }
 }
 
-void SkRecordReplayDisallowedIdAssert(const char* what, const void* address) {
+void SkRecordReplayDisallowedIdNote(const char* what, const void* address) {
   if (SkRecordReplayIsolatedDrawAssertsEnabled() && !SkRecordReplayInIsolatedDraw() &&
-      SkRecordReplayAssertBudget()) {
-    SkRecordReplayPrint("IsolatedDrawAssert %s outside an isolated draw caller=%p", what, address);
+      SkRecordReplayNoteBudget()) {
+    SkRecordReplayPrint("IsolatedDrawNote %s outside an isolated draw caller=%p", what, address);
   }
 }
 
