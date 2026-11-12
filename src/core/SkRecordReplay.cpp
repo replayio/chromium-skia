@@ -15,6 +15,7 @@
 #endif
 
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <string>
@@ -205,24 +206,29 @@ bool SkRecordReplayInIsolatedDraw() {
   return gRecordReplayIsolatedDrawDepth > 0;
 }
 
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-static bool SkRecordReplayCheckBudget() {
+static bool SkRecordReplayIsolatedDrawAssertsEnabled() {
+  static const bool enabled = !!getenv("RECORD_REPLAY_ISOLATED_DRAW_ASSERTS");
+  return enabled;
+}
+
+static bool SkRecordReplayAssertBudget() {
   static std::atomic<int> count;
   return count++ < 2000;
 }
 
-void SkRecordReplayIsolatedDrawCheck(const char* what, const void* address) {
-  if (SkRecordReplayInIsolatedDraw() && SkRecordReplayCheckBudget()) {
-    SkRecordReplayPrint("IsolatedDrawCheck %s caller=%p", what, address);
+void SkRecordReplayIsolatedDrawAssert(const char* what, const void* address) {
+  if (SkRecordReplayIsolatedDrawAssertsEnabled() && SkRecordReplayInIsolatedDraw() &&
+      SkRecordReplayAssertBudget()) {
+    SkRecordReplayPrint("IsolatedDrawAssert %s caller=%p", what, address);
   }
 }
 
-void SkRecordReplayDisallowedIdCheck(const char* what, const void* address) {
-  if (!SkRecordReplayInIsolatedDraw() && SkRecordReplayCheckBudget()) {
-    SkRecordReplayPrint("IsolatedDrawCheck %s outside an isolated draw caller=%p", what, address);
+void SkRecordReplayDisallowedIdAssert(const char* what, const void* address) {
+  if (SkRecordReplayIsolatedDrawAssertsEnabled() && !SkRecordReplayInIsolatedDraw() &&
+      SkRecordReplayAssertBudget()) {
+    SkRecordReplayPrint("IsolatedDrawAssert %s outside an isolated draw caller=%p", what, address);
   }
 }
-#endif
 
 bool SkRecordReplayAreEventsUnavailable(const char* why) {
   return SkRecordReplayAreEventsDisallowed(why) ||

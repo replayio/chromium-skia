@@ -67,9 +67,7 @@ SkTypefaceCache& SkTypefaceCache::Get() {
 }
 
 SkTypefaceID SkTypefaceCache::NewTypefaceID() {
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-    SkRecordReplayIsolatedDrawCheck("SkTypefaceCache::NewTypefaceID", __builtin_return_address(0));
-#endif
+    SkRecordReplayIsolatedDrawAssert("SkTypefaceCache::NewTypefaceID", __builtin_return_address(0));
     static std::atomic<int32_t> nextID{1};
     return nextID.fetch_add(1, std::memory_order_relaxed);
 }

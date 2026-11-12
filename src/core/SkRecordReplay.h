@@ -29,12 +29,12 @@ extern bool SkRecordReplayAreEventsDisallowedByDriver();
 // Whether this thread is in a draw started by SkRecordReplayBeginIsolatedDraw().
 extern bool SkRecordReplayInIsolatedDraw();
 
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-// Checks of what isolated draws touch (record_replay_isolated_draw_checks):
-// prints |what| in an isolated draw, or, for the second, outside one.
-extern void SkRecordReplayIsolatedDrawCheck(const char* what, const void* address);
-extern void SkRecordReplayDisallowedIdCheck(const char* what, const void* address);
-#endif
+// Checks of what isolated draws touch, enabled by
+// RECORD_REPLAY_ISOLATED_DRAW_ASSERTS: report |what| in an isolated draw, or,
+// for the second, outside one. Callers are on paths that are already slow
+// (ordered locks, new typeface IDs, IDs taken with events disallowed).
+extern void SkRecordReplayIsolatedDrawAssert(const char* what, const void* address);
+extern void SkRecordReplayDisallowedIdAssert(const char* what, const void* address);
 
 // Code that runs with recorded events disallowed takes IDs from ranges of its
 // own: an ID it took from a shared counter would be given again to an object
@@ -54,9 +54,7 @@ inline bool SkRecordReplayTakeIsolatedId(T* id) {
   if (!SkRecordReplayAreEventsDisallowedByDriver()) {
     return false;
   }
-#if defined(RECORD_REPLAY_ISOLATED_DRAW_CHECKS)
-  SkRecordReplayDisallowedIdCheck("Skia ID", __builtin_return_address(0));
-#endif
+  SkRecordReplayDisallowedIdAssert("Skia ID", __builtin_return_address(0));
   constexpr T kTop = std::numeric_limits<T>::max() / Step * Step;
   static std::atomic<T> drawNext{kTop};
   static std::atomic<T> disallowedNext{kTop / 2 / Step * Step};
