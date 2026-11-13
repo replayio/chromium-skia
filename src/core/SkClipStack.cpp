@@ -938,6 +938,9 @@ uint32_t SkClipStack::GetNextGenID() {
     static std::atomic<uint32_t> nextID{kFirstUnreservedGenID};
 
     uint32_t id;
+    if (SkRecordReplayTakeIsolatedId(&id)) {
+        return id;
+    }
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id < kFirstUnreservedGenID);

@@ -15,6 +15,7 @@
 #endif
 
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <string>
@@ -109,7 +110,9 @@ void SkRecordReplayWarning(const char* format, ...) {
 }
 
 void SkRecordReplayAssert(const char* format, ...) {
-  if (EnsureInitialized()) {
+  // As recordreplay::AssertMaybeEventsDisallowed in Chromium: code that runs with
+  // recorded events disallowed, such as Replay's in-process draws, doesn't assert.
+  if (EnsureInitialized() && !SkRecordReplayAreEventsDisallowedByDriver()) {
     va_list ap;
     va_start(ap, format);
     gRecordReplayAssert(format, ap);
@@ -182,6 +185,49 @@ bool SkRecordReplayHasDivergedFromRecording(void) {
   return EnsureInitialized() && 
     gRecordReplayIsReplaying() && 
     gRecordReplayHasDivergedFromRecording();
+}
+
+bool SkRecordReplayAreEventsDisallowedByDriver() {
+  return EnsureInitialized() && gRecordReplayAreEventsDisallowed &&
+         gRecordReplayAreEventsDisallowed();
+}
+
+static thread_local int gRecordReplayIsolatedDrawDepth;
+
+void SkRecordReplayBeginIsolatedDraw() {
+  gRecordReplayIsolatedDrawDepth++;
+}
+
+void SkRecordReplayEndIsolatedDraw() {
+  gRecordReplayIsolatedDrawDepth--;
+}
+
+bool SkRecordReplayInIsolatedDraw() {
+  return gRecordReplayIsolatedDrawDepth > 0;
+}
+
+static bool SkRecordReplayIsolatedDrawAssertsEnabled() {
+  static const bool enabled = !!getenv("RECORD_REPLAY_ISOLATED_DRAW_ASSERTS");
+  return enabled;
+}
+
+static bool SkRecordReplayNoteBudget() {
+  static std::atomic<int> count;
+  return count++ < 2000;
+}
+
+void SkRecordReplayIsolatedDrawAssert(const char* what, const void* address) {
+  if (SkRecordReplayIsolatedDrawAssertsEnabled() && SkRecordReplayInIsolatedDraw()) {
+    SkRecordReplayPrint("IsolatedDrawAssert failed: %s caller=%p", what, address);
+    abort();
+  }
+}
+
+void SkRecordReplayDisallowedIdNote(const char* what, const void* address) {
+  if (SkRecordReplayIsolatedDrawAssertsEnabled() && !SkRecordReplayInIsolatedDraw() &&
+      SkRecordReplayNoteBudget()) {
+    SkRecordReplayPrint("IsolatedDrawNote %s outside an isolated draw caller=%p", what, address);
+  }
 }
 
 bool SkRecordReplayAreEventsUnavailable(const char* why) {

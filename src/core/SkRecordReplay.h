@@ -8,6 +8,9 @@
 #ifndef SkRecordReplay_DEFINED
 #define SkRecordReplay_DEFINED
 
+#include <atomic>
+#include <limits>
+
 extern void SkRecordReplayPrint(const char* format, ...);
 extern void SkRecordReplayWarning(const char* format, ...);
 extern void SkRecordReplayAssert(const char* format, ...);
@@ -20,6 +23,48 @@ extern bool SkRecordReplayFeatureEnabled(const char* feature, const char* subfea
 extern bool SkRecordReplayIsRecordingOrReplaying(const char* feature = nullptr,
                                                  const char* subfeature = nullptr);
 extern bool SkRecordReplayAreEventsDisallowed(const char* why = nullptr);
+// Whether the driver disallows recorded events on this thread, regardless of
+// the disallow-events feature.
+extern bool SkRecordReplayAreEventsDisallowedByDriver();
+// Whether this thread is in a draw started by SkRecordReplayBeginIsolatedDraw().
+extern bool SkRecordReplayInIsolatedDraw();
+
+// Checks of what isolated draws touch, enabled by
+// RECORD_REPLAY_ISOLATED_DRAW_ASSERTS: the first fails (prints |what| and
+// aborts) in an isolated draw, the second only prints |what| outside one.
+// Callers are on paths that are already slow (ordered locks, new typeface IDs,
+// IDs taken with events disallowed).
+extern void SkRecordReplayIsolatedDrawAssert(const char* what, const void* address);
+extern void SkRecordReplayDisallowedIdNote(const char* what, const void* address);
+
+// Code that runs with recorded events disallowed takes IDs from ranges of its
+// own: an ID it took from a shared counter would be given again to an object
+// a recorded thread creates later, and some of that code (replay-only
+// commands, unordered tasks) doesn't run at the same points when recording
+// and replaying. Isolated draws, which run only when replaying, have a range
+// apart from the rest of that code, whose IDs would otherwise differ between
+// recording and replaying once a draw ran. Both count down, isolated draws
+// from the largest value and other code from half of it, while shared
+// counters count up, so they would only meet where a counter wraps. Takes
+// multiples of |Step| greater than |Reserved|. Sets |id| and returns true if
+// events are disallowed. IDs taken lazily, such as pixel ref and path
+// generation IDs, come from these ranges also for objects that recorded
+// threads use later.
+template <typename T, T Step = 1, T Reserved = 0>
+inline bool SkRecordReplayTakeIsolatedId(T* id) {
+  if (!SkRecordReplayAreEventsDisallowedByDriver()) {
+    return false;
+  }
+  SkRecordReplayDisallowedIdNote("Skia ID", __builtin_return_address(0));
+  constexpr T kTop = std::numeric_limits<T>::max() / Step * Step;
+  static std::atomic<T> drawNext{kTop};
+  static std::atomic<T> disallowedNext{kTop / 2 / Step * Step};
+  std::atomic<T>& next = SkRecordReplayInIsolatedDraw() ? drawNext : disallowedNext;
+  do {
+    *id = next.fetch_sub(Step, std::memory_order_relaxed);
+  } while (*id <= Reserved);
+  return true;
+}
 
 // Gate a LeakMemory intervention and breadcrumb it into crash-report diagnostics.
 inline bool SkRecordReplayEnterLeakMemory(const char* label) {

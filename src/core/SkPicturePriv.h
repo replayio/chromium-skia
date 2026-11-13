@@ -8,6 +8,7 @@
 #ifndef SkPicturePriv_DEFINED
 #define SkPicturePriv_DEFINED
 
+#include "src/core/SkRecordReplay.h"
 #include "include/core/SkPicture.h"
 
 class SkReadBuffer;
@@ -43,6 +44,10 @@ public:
     }
 
     static void AddedToCache(const SkPicture* pic) {
+        // See SkImage_Base::notifyAddedToRasterCache().
+        if (SkRecordReplayInIsolatedDraw()) {
+            return;
+        }
         pic->fAddedToCache.store(true);
     }
 

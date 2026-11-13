@@ -17,12 +17,15 @@
 extern int SkRecordReplayCreateOrderedLock(const char* ordered_name);
 extern void SkRecordReplayOrderedLock(int lock);
 extern void SkRecordReplayOrderedUnlock(int lock);
+extern void SkRecordReplayIsolatedDrawAssert(const char* what, const void* address);
 
 class SK_CAPABILITY("mutex") SkMutex {
 public:
     constexpr SkMutex() = default;
     SkMutex(const char* ordered_name) {
-      fOrderedLockId = SkRecordReplayCreateOrderedLock(ordered_name);
+      if (ordered_name) {
+        fOrderedLockId = SkRecordReplayCreateOrderedLock(ordered_name);
+      }
     }
 
     ~SkMutex() {
@@ -31,6 +34,7 @@ public:
 
     void acquire() SK_ACQUIRE() {
         if (fOrderedLockId) {
+          SkRecordReplayIsolatedDrawAssert("ordered SkMutex", __builtin_return_address(0));
           SkRecordReplayOrderedLock(fOrderedLockId);
         } else {
           fSemaphore.wait();
