@@ -35,12 +35,13 @@ SkImage_Base::SkImage_Base(const SkImageInfo& info, uint32_t uniqueID,
 
 SkImage_Base::~SkImage_Base() {
     if (fAddedToRasterCache.load()) {
-        if (!SkRecordReplayIsRecordingOrReplaying(/* "leak-references" */) || !SkRecordReplayAreEventsDisallowed()) {
-            SkNotifyBitmapGenIDIsStale(this->uniqueID());
-        } else {
+        if (SkRecordReplayAreEventsDisallowed() &&
+            SkRecordReplayEnterLeakMemory("SkImage")) {
             // Leak and print (so we get a general idea of memory impact)
             SkRecordReplayPrint("[RUN-593-1883] SkImage_Base::~SkImage_Base - [LEAK] SkImage_Base %u",
                                 this->uniqueID());
+        } else {
+            SkNotifyBitmapGenIDIsStale(this->uniqueID());
         }
     }
 }

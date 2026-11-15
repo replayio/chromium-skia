@@ -124,6 +124,20 @@ public:
         }, &face);
         return face;
     }
+
+    /** Any FaceRec-bearing typeface already in the request cache, or null if empty. */
+    sk_sp<SkTypeface> findAny() {
+        sk_sp<SkTypeface> face;
+        fCachedResults.visitAll([](const SkResourceCache::Rec& rec, void* context) {
+            sk_sp<SkTypeface>* out = static_cast<sk_sp<SkTypeface>*>(context);
+            if (*out) {
+                return;
+            }
+            const Result& result = static_cast<const Result&>(rec);
+            *out = result.fFace;
+        }, &face);
+        return face;
+    }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -182,20 +196,22 @@ protected:
     {
         SkAutoMutexExclusive ama(fMutex);
 
-        // If we've run out of recording data, then following this chain of logic will lead to
-        // hangs, as we await conditional vars on epoll waiters that don't actually exist, held
-        // by threads that are dead (waiting forever.)  Luckily, it seems we can just early out
-        // and have Chromium use some defaults for us.
-        if (SkRecordReplayHasDivergedFromRecording()) {
-            return nullptr;
-        }
-
         // Check if this request is already in the request cache.
         using Request = SkFontRequestCache::Request;
         std::unique_ptr<Request> request(Request::Create(requestedFamilyName, requestedStyle));
         sk_sp<SkTypeface> face = fCache.findAndRef(request.get());
         if (face) {
             return sk_sp<SkTypeface>(face);
+        }
+
+        // Post-diverge, matchFamilyName below is a font service IPC that never completes.
+        // Prefer any already-cached typeface over a null PrimaryFont.
+        if (SkRecordReplayHasDivergedFromRecording()) {
+            sk_sp<SkTypeface> any = fCache.findAny();
+            if (any) {
+                return any;
+            }
+            return nullptr;
         }
 
         SkFontConfigInterface::FontIdentity identity;

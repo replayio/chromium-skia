@@ -20,6 +20,14 @@ extern bool SkRecordReplayFeatureEnabled(const char* feature, const char* subfea
 extern bool SkRecordReplayIsRecordingOrReplaying(const char* feature = nullptr,
                                                  const char* subfeature = nullptr);
 extern bool SkRecordReplayAreEventsDisallowed(const char* why = nullptr);
+
+// Gate a LeakMemory intervention and breadcrumb it into crash-report diagnostics.
+inline bool SkRecordReplayEnterLeakMemory(const char* label) {
+  if (!SkRecordReplayIsRecordingOrReplaying("leak-references", label))
+    return false;
+  SkRecordReplayDiagnostic("LeakMemory %s", label);
+  return true;
+}
 extern void SkRecordReplayBeginPassThroughEvents();
 extern void SkRecordReplayEndPassThroughEvents();
 extern bool SkRecordReplayIsReplaying();

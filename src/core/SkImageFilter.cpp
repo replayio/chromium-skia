@@ -163,7 +163,13 @@ SkImageFilter_Base::SkImageFilter_Base(sk_sp<SkImageFilter> const* inputs,
 }
 
 SkImageFilter_Base::~SkImageFilter_Base() {
-    SkImageFilterCache::Get()->purgeByImageFilter(this);
+    if (fAddedToCache.load()) {
+        if (SkRecordReplayIsRecordingOrReplaying()) {
+            SkRecordReplayQueueImageFilterPurge(fUniqueID);
+        } else {
+            SkImageFilterCache::Get()->purgeByImageFilter(this);
+        }
+    }
 }
 
 std::pair<sk_sp<SkImageFilter>, std::optional<SkRect>>
@@ -250,6 +256,9 @@ skif::FilterResult SkImageFilter_Base::filterImage(const skif::Context& context)
                               context.mapping().layerMatrix().asM33(),
                               SkIRect(context.desiredOutput()),
                               srcGenID, srcSubset);
+    SkRecordReplayAssert("SkImageFilter_Base::filterImage %u %d %u %d %d", fUniqueID,
+                         !!context.backend()->cache(), srcGenID, srcSubset.width(),
+                         srcSubset.height());
     if (context.backend()->cache() && context.backend()->cache()->get(key, &result)) {
         context.markCacheHit();
         return result;
