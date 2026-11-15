@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include "include/private/base/SkOnce.h"
+#include "include/private/SkOnce.h"
 #include "SkRecordReplay.h"
 
 #ifndef _WIN32
@@ -15,6 +15,7 @@
 #endif
 
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <string>
