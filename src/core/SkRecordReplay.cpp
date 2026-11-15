@@ -27,7 +27,6 @@ static bool gRecordingOrReplaying;
 static bool gHasDisabledFeatures;
 
 static void (*gRecordReplayPrint)(const char* format, va_list args);
-static void (*gRecordReplayWarning)(const char* format, va_list args);
 static void (*gRecordReplayAssert)(const char*, va_list);
 static void (*gRecordReplayDiagnostic)(const char*, va_list);
 static void (*gRecordReplayRegisterPointer)(const void* ptr);
@@ -67,7 +66,6 @@ static inline bool EnsureInitialized() {
   static SkOnce once;
   once([]{
     RecordReplayLoadSymbol("RecordReplayPrint", gRecordReplayPrint);
-    RecordReplayLoadSymbol("RecordReplayWarning", gRecordReplayWarning);
     RecordReplayLoadSymbol("RecordReplayAssert", gRecordReplayAssert);
     RecordReplayLoadSymbol("RecordReplayDiagnostic", gRecordReplayDiagnostic);
     RecordReplayLoadSymbol("RecordReplayRegisterPointer", gRecordReplayRegisterPointer);
@@ -99,14 +97,6 @@ void SkRecordReplayPrint(const char* format, ...) {
   }
 }
 
-void SkRecordReplayWarning(const char* format, ...) {
-  if (EnsureInitialized()) {
-    va_list ap;
-    va_start(ap, format);
-    gRecordReplayWarning(format, ap);
-    va_end(ap);
-  }
-}
 
 void SkRecordReplayAssert(const char* format, ...) {
   if (EnsureInitialized()) {
