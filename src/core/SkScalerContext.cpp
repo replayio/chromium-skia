@@ -122,6 +122,8 @@ static SkMutex& mask_gamma_cache_mutex() {
     return mutex;
 }
 
+void SkRecordReplayInitMaskGammaCache() { (void)mask_gamma_cache_mutex(); }
+
 static const SkMaskGamma& linear_gamma() {
     static const SkMaskGamma kLinear;
     return kLinear;

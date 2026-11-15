@@ -14,6 +14,7 @@
 #include "include/private/SkDebug.h"
 #include "include/private/SkMutex.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <utility>
@@ -53,6 +54,24 @@ void SkTypefaceCache::purge(int numToPurge) {
     int count = fTypefaces.size();
     int i = 0;
     SkRecordReplayAssert("[RUN-2612-2639] SkTypefaceCache::purge %d %d", count, numToPurge);
+    // Whether the cache holds the only reference to a typeface depends on what the collector has
+    // freed, where font data is collected, and that isn't the same on a replay. The cache then
+    // differs, and with it whether a font finds its typeface here or has one made, which asks the
+    // system. So the oldest entries go, whoever else holds them: a typeface still in use is only
+    // made again if asked for.
+    if (SkRecordReplayIsRecordingOrReplaying()) {
+        int purged = std::min(numToPurge, count);
+        if (purged <= 0) {
+            return;
+        }
+        skia_private::TArray<sk_sp<SkTypeface>> kept;
+        kept.reserve(count - purged);
+        for (int j = purged; j < count; j++) {
+            kept.push_back(std::move(fTypefaces[j]));
+        }
+        fTypefaces = std::move(kept);
+        return;
+    }
     while (i < count) {
         if (fTypefaces[i]->unique()) {
             fTypefaces.removeShuffle(i);
@@ -86,6 +105,8 @@ static SkMutex& typeface_cache_mutex() {
     static SkMutex& mutex = *(new SkMutex);
     return mutex;
 }
+
+void SkRecordReplayInitTypefaceCache() { (void)typeface_cache_mutex(); }
 
 void SkTypefaceCache::Add(sk_sp<SkTypeface> face) {
     SkAutoMutexExclusive ama(typeface_cache_mutex());

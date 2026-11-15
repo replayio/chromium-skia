@@ -97,6 +97,16 @@ void SkPixelRef::addGenIDChangeListener(sk_sp<SkIDChangeListener> listener) {
 // we need to be called *before* the genID gets changed or zerod
 void SkPixelRef::callGenIDChangeListeners() {
     // We don't invalidate ourselves if we think another SkPixelRef is sharing our genID.
+    // A bitmap the collector frees gets here too, with events disallowed, and the listeners' list
+    // has a mutex. What the listeners drop is cached work, made again if asked for.
+    const bool passThrough = SkRecordReplayAreEventsDisallowed();
+    if (passThrough) {
+        SkRecordReplayBeginPassThroughEvents();
+    }
+    struct EndPassThrough {
+        bool fActive;
+        ~EndPassThrough() { if (fActive) { SkRecordReplayEndPassThroughEvents(); } }
+    } endPassThrough{passThrough};
     if (this->genIDIsUnique()) {
         fGenIDChangeListeners.changed();
         if (fAddedToCache.exchange(false)) {

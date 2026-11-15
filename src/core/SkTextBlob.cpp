@@ -150,6 +150,13 @@ static uint32_t next_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidGenID);
+    // The counter is shared by every thread that makes text blobs (the main thread, and the
+    // compositor for what it draws itself), so which thread gets which number depends on timing.
+    // A replay gives each the number it got when recording.
+    if (SkRecordReplayIsRecordingOrReplaying() && !SkRecordReplayAreEventsDisallowed() &&
+        !SkRecordReplayHasDivergedFromRecording()) {
+        id = (uint32_t)SkRecordReplayValue("SkTextBlob id", id);
+    }
     SkRecordReplayAssert("[RUN-593-1969] SkTextBlob/next_id %d", id);
     return id;
 }
