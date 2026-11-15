@@ -10,6 +10,8 @@
 #include "src/gpu/graphite/DrawParams.h"
 #include "src/gpu/graphite/UniformManager.h"
 
+#include "src/core/SkRecordReplay.h"
+
 namespace skgpu::graphite {
 
 RenderStep::RenderStep(Layout layout,
@@ -40,6 +42,7 @@ RenderStep::RenderStep(Layout layout,
         , fAppendDataStride(0)
         , fStorageUniformStride(0)
         , fStorageUniformAlignment(1) {
+    SkRecordReplayAssert("[RUN-593-1969] graphite/RenderStep::RenderStep %u", static_cast<unsigned>(fRenderStepID));
     // If declaring storage uniforms, the flags must specify their visibility
     SkASSERT(fStorageUniforms.empty() ||
              SkToBool(fStorageBufferStages & (PipelineStageFlags::kVertexShader |

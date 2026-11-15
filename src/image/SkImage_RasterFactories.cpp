@@ -17,6 +17,7 @@
 #include "src/core/SkCompressedDataUtils.h"
 #include "src/core/SkImageFilterTypes.h"
 #include "src/core/SkImageFilter_Base.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/image/SkImage_Base.h"
 #include "src/image/SkImage_Raster.h"
 
@@ -71,6 +72,7 @@ static bool valid_args(const SkImageInfo& info, size_t rowBytes, size_t* minSize
 
 namespace SkImages {
 sk_sp<SkImage> RasterFromBitmap(const SkBitmap& bm) {
+    SkRecordReplayAssert("[RUN-593-1863] SkImage::MakeFromBitmap %d", !!bm.pixelRef());
     if (!bm.pixelRef()) {
         return nullptr;
     }

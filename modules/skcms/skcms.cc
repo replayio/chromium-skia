@@ -41,6 +41,33 @@ using namespace skcms_private;
 // a 32-bit signed integer (which is what AVX2/AVX-512 gather expects).
 #define SKCMS_MAX_GRID_POINTS 350000000
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#else
+#include <windows.h>
+#endif
+
+static void* LookupRecordReplaySymbol(const char* name) {
+#ifndef _WIN32
+  void* fnptr = dlsym(RTLD_DEFAULT, name);
+#else
+  HMODULE module = GetModuleHandleA("windows-recordreplay.dll");
+  void* fnptr = module ? (void*)GetProcAddress(module, name) : nullptr;
+#endif
+  return fnptr ? fnptr : reinterpret_cast<void*>(1);
+}
+
+static bool RecordReplayIsReplaying() {
+  static void* fnptr;
+  if (!fnptr) {
+    fnptr = LookupRecordReplaySymbol("RecordReplayIsReplaying");
+  }
+  if (fnptr != reinterpret_cast<void*>(1)) {
+    return reinterpret_cast<bool(*)()>(fnptr)();
+  }
+  return false;
+}
+
 static bool sAllowRuntimeCPUDetection = true;
 
 void skcms_DisableRuntimeCPUDetection() {
@@ -2470,6 +2497,14 @@ static CpuType cpu_type() {
             if (!sAllowRuntimeCPUDetection) {
                 return CpuType::Baseline;
             }
+
+            // When replaying, memory snapshots might be taken and restored on a
+            // machine with different CPU characteristics, invalidating the cached
+            // CPU type.
+            if (RecordReplayIsReplaying()) {
+                return CpuType::Baseline;
+            }
+
             // See http://www.sandpile.org/x86/cpuid.htm
 
             // First, a basic cpuid(1) lets us check prerequisites for HSW, SKX.

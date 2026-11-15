@@ -24,6 +24,8 @@
 #include "src/core/SkSurfacePriv.h"
 #include "src/image/SkSurface_Base.h"
 
+#include "src/core/SkRecordReplay.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -71,6 +73,7 @@ SkSurface::SkSurface(const SkImageInfo& info, const SkSurfaceProps* props)
 uint32_t SkSurface::generationID() {
     if (0 == fGenerationID) {
         fGenerationID = asSB(this)->newGenerationID();
+        SkRecordReplayAssert("[RUN-593-1969] SkSurface::generationID %u", fGenerationID);
     }
     return fGenerationID;
 }

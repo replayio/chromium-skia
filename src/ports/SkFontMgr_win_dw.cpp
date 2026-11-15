@@ -17,6 +17,7 @@
 #include "include/private/SkTPin.h"
 #include "src/core/SkEndian.h"
 #include "src/core/SkFontDescriptor.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkTypefaceCache.h"
 #include "src/core/SkUTF.h"
 #include "src/core/SkZip.h"
@@ -108,6 +109,7 @@ public:
         , fFontCollection(SkRefComPtr(fontCollection))
         , fLocaleName(localeNameLength)
         , fDefaultFamilyName(defaultFamilyNameLength)
+        , fTFCacheMutex("SkFontMgr_DirectWrite")
     {
         memcpy(fLocaleName.get(), localeName, localeNameLength * sizeof(WCHAR));
         memcpy(fDefaultFamilyName.get(), defaultFamilyName, defaultFamilyNameLength*sizeof(WCHAR));
@@ -203,6 +205,8 @@ struct ProtoDWriteTypeface {
 };
 
 static bool FindByDWriteFont(SkTypeface* cached, void* ctx) {
+    SkRecordReplayAssert("[RUN-2612-2639] FindByDWriteFont %u", cached->uniqueID());
+
     DWriteFontTypeface* cshFace = reinterpret_cast<DWriteFontTypeface*>(cached);
     ProtoDWriteTypeface* ctxFace = reinterpret_cast<ProtoDWriteTypeface*>(ctx);
 
@@ -360,7 +364,10 @@ sk_sp<SkFontStyleSet> SkFontMgr_DirectWrite::onCreateStyleSet(int index) const {
 }
 
 sk_sp<SkFontStyleSet> SkFontMgr_DirectWrite::onMatchFamily(const char familyName[]) const {
+    SkRecordReplayAssert("[RUN-2116] SkFontMgr_DirectWrite::onMatchFamily %s", familyName);
+
     if (!familyName) {
+        SkRecordReplayAssert("[RUN-2116] SkFontMgr_DirectWrite::onMatchFamily #1");
         return nullptr;
     }
 
@@ -371,6 +378,9 @@ sk_sp<SkFontStyleSet> SkFontMgr_DirectWrite::onMatchFamily(const char familyName
     BOOL exists;
     HRNM(fFontCollection->FindFamilyName(dwFamilyName.get(), &index, &exists),
             "Failed while finding family by name.");
+
+    SkRecordReplayAssert("[RUN-2116] SkFontMgr_DirectWrite::onMatchFamily #2");
+
     if (!exists) {
         return nullptr;
     }

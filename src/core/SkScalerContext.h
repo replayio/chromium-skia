@@ -114,6 +114,10 @@ public:
         fContrast = InternalContrastFromExternal(c);
     }
 
+    // Replay: public getters for diagnostics (SkRecordReplayAssert).
+    SkScalar getDeviceGamma() const { return ExternalGammaFromInternal(fDeviceGamma); }
+    SkScalar getContrast() const { return ExternalContrastFromInternal(fContrast); }
+
     static const SkMaskGamma& CachedMaskGamma(uint8_t contrast, uint8_t gamma);
     const SkMaskGamma& cachedMaskGamma() const {
         return CachedMaskGamma(fContrast, fDeviceGamma);

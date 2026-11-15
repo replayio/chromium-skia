@@ -9,6 +9,7 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/gpu/ganesh/GrDrawingManager.h"
 #include "src/gpu/ganesh/GrRenderTargetProxy.h"
 #include "src/gpu/ganesh/GrSurface.h"
@@ -28,6 +29,7 @@ uint32_t GrRenderTask::CreateUniqueID() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidUniqueID);
+    SkRecordReplayAssert("[RUN-593-1969] GrRenderTask::CreateUniqueID %u", id);
     return id;
 }
 

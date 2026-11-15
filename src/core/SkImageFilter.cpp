@@ -22,6 +22,7 @@
 #include "src/core/SkLocalMatrixImageFilter.h"
 #include "src/core/SkPicturePriv.h"
 #include "src/core/SkReadBuffer.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkRectPriv.h"
 #include "src/core/SkSpecialImage.h"
 #include "src/core/SkValidationUtils.h"
@@ -142,6 +143,7 @@ static int32_t next_image_filter_unique_id() {
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == 0);
+    id = SkRecordReplayValue("next_image_filter_unique_id", id);
     return id;
 }
 

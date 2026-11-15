@@ -14,6 +14,7 @@
 #include "include/ports/SkFontMgr_FontConfigInterface.h"
 #include "include/private/SkMutex.h"
 #include "src/core/SkFontDescriptor.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkTypefaceCache.h"
 #include "src/ports/SkFontConfigTypeface.h"
@@ -153,6 +154,7 @@ public:
     SkFontMgr_FCI(sk_sp<SkFontConfigInterface> fci, std::unique_ptr<SkFontScanner> scanner)
         : fFCI(std::move(fci))
         , fScanner(std::move(scanner))
+        , fMutex("SkFontMgr_FCI")
         , fCache(kMaxSize)
     {
         SkASSERT_RELEASE(fFCI);
@@ -179,6 +181,14 @@ protected:
                                          const SkFontStyle& requestedStyle) const override
     {
         SkAutoMutexExclusive ama(fMutex);
+
+        // If we've run out of recording data, then following this chain of logic will lead to
+        // hangs, as we await conditional vars on epoll waiters that don't actually exist, held
+        // by threads that are dead (waiting forever.)  Luckily, it seems we can just early out
+        // and have Chromium use some defaults for us.
+        if (SkRecordReplayHasDivergedFromRecording()) {
+            return nullptr;
+        }
 
         // Check if this request is already in the request cache.
         using Request = SkFontRequestCache::Request;

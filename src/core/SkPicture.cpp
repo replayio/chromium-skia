@@ -23,6 +23,7 @@
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkRecord.h"
 #include "src/core/SkRecordDraw.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkRecords.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkStreamPriv.h"
@@ -64,11 +65,18 @@ SkPicture::SkPicture(const SkRect& cull,
         , fApproxBytesUsedBySubPictures(approxBytesUsedBySubPictures)
         , fRecord(std::move(record))
         , fDrawablePicts(std::move(drawablePicts))
-        , fBBH(std::move(bbh)) {}
+        , fBBH(std::move(bbh)) {
+    SkRecordReplayAssert("[RUN-593-1863] SkPicture::fUniqueID %u", fUniqueID);
+}
 
 SkPicture::~SkPicture() {
     if (fAddedToCache.load()) {
-        SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
+        if (!SkRecordReplayIsRecordingOrReplaying(/* "leak-references" */) || !SkRecordReplayAreEventsDisallowed()) {
+            SkResourceCache::PostPurgeSharedID(SkPicturePriv::MakeSharedID(fUniqueID));
+        } else {
+            // Leak and print (so we get a general idea of memory impact)
+            SkRecordReplayPrint("[RUN-593-1863] SkPicture::~SkPicture - [LEAK] SkPicture %u", fUniqueID);
+        }
     }
 }
 

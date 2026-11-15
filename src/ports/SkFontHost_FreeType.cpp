@@ -33,6 +33,7 @@
 #include "src/core/SkGlyph.h"
 #include "src/core/SkMask.h"
 #include "src/core/SkMaskGamma.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/core/SkScalerContext.h"
 #include "src/core/SkTSearch.h"
 #include "src/ports/SkFontHost_FreeType_common.h"
@@ -219,7 +220,7 @@ private:
 };
 
 static SkMutex& f_t_mutex() {
-    static SkMutex& mutex = *(new SkMutex);
+    static SkMutex& mutex = *(new SkMutex("f_t_mutex"));
     return mutex;
 }
 
@@ -721,6 +722,9 @@ static bool isAxisAligned(const SkScalerContextRec& rec) {
 
 std::unique_ptr<SkScalerContext> SkTypeface_FreeType::onCreateScalerContext(
     const SkScalerContextEffects& effects, const SkDescriptor* desc) const {
+    // https://linear.app/replay/issue/RUN-845
+    SkRecordReplayAssert("SkTypeface_FreeType::onCreateScalerContext");
+
     return this->onCreateScalerContextAsProxyTypeface(effects, desc, nullptr);
 }
 
