@@ -38,8 +38,14 @@ static uint64_t next_pathdata_unique_id() {
             std::numeric_limits<uint64_t>::max() >> kHighBitsToMakeRoomForFillType;
     static std::atomic<uint64_t> nextID{1};
     uint64_t id = nextID.fetch_add(1, std::memory_order_relaxed);
+    // [RecordReplay] Record the id rather than assert it. How many path datas
+    // have been made by this point depends on which ones a cache still had, so
+    // the counter legitimately differs between recording and replaying, and an
+    // assert on it only reports that difference instead of removing it. Taking
+    // the recorded value is what next_image_filter_unique_id does for the same
+    // kind of counter, here and at M108. DSRC-447.
+    id = SkRecordReplayValue("next_pathdata_unique_id", id);
     SkASSERT_RELEASE(id <= kMaxID);
-    SkRecordReplayAssert("[RUN-593-1969] SkPathData/next_pathdata_unique_id %u", (uint32_t)id);
     return id;
 }
 
