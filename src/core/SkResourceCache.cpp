@@ -498,6 +498,8 @@ static SkSynchronizedResourceCache* get_cache() {
     return gResourceCache;
 }
 
+void SkRecordReplayInitResourceCache() { (void)get_cache(); }
+
 size_t SkResourceCache::GetTotalBytesUsed() {
     return get_cache()->getTotalBytesUsed();
 }

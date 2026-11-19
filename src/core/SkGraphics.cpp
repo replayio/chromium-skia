@@ -37,6 +37,12 @@ void SkGraphics::Init() {
         // worker or a canvas worker), which differs between recording and replaying.
         SkImageFilterCache::Get();
     }
+    if (SkRecordReplayIsRecordingOrReplaying("eager-initialization", "SkResourceCache")) {
+        // The same for the cache of images, mipmaps and blurs, whose mutex is named and so is
+        // ordered from wherever the cache is first made: a raster worker finding a resource,
+        // a GC posting a purge, or the browser reading the cache's size.
+        SkRecordReplayInitResourceCache();
+    }
     if (SkRecordReplayIsRecordingOrReplaying("eager-initialization", "SkFontCaches")) {
         // The same for the caches a glyph is drawn through. Each one's mutex is ordered only if
         // it's made while events are recorded, and the first thread to draw text may get there
