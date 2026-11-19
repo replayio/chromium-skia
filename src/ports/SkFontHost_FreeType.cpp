@@ -224,6 +224,8 @@ static SkMutex& f_t_mutex() {
     return mutex;
 }
 
+void SkRecordReplayInitFreeTypeLock() { (void)f_t_mutex(); }
+
 static FreeTypeLibrary* gFTLibrary;
 
 ///////////////////////////////////////////////////////////////////////////
