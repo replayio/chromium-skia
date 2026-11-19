@@ -44,6 +44,10 @@ public:
     ~SkSynchronizedResourceCache() override;
 
 private:
-    mutable SkMutex fMutex;
+    // Named, so taking it is an ordered lock: SkGraphics::Init makes the global cache this
+    // guards, and threads find in it what the recording's threads found. A cache owned by an
+    // SkSharedContext gets its own ordered lock wherever that context is made, which nothing
+    // pins; no Chromium build makes one today.
+    mutable SkMutex fMutex{"SkResourceCache"};
 };
 #endif

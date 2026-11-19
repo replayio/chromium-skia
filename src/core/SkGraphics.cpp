@@ -38,9 +38,10 @@ void SkGraphics::Init() {
         SkImageFilterCache::Get();
     }
     if (SkRecordReplayIsRecordingOrReplaying("eager-initialization", "SkResourceCache")) {
-        // The same for the cache of images, mipmaps and blurs, whose mutex is named and so is
-        // ordered from wherever the cache is first made: a raster worker finding a resource,
-        // a GC posting a purge, or the browser reading the cache's size.
+        // The same for the cache of images, mipmaps and blurs. Its mutex is named, so making
+        // the cache creates the ordered lock and records its ID on the thread that got there
+        // first, which is otherwise a raster worker, the compositor or the browser reading the
+        // cache's size, and differs between recording and replaying.
         SkRecordReplayInitResourceCache();
     }
     if (SkRecordReplayIsRecordingOrReplaying("eager-initialization", "SkFontCaches")) {

@@ -8,12 +8,10 @@
 #include "src/core/SkSynchronizedResourceCache.h"
 
 SkSynchronizedResourceCache::SkSynchronizedResourceCache(DiscardableFactory fact)
- : SkResourceCache(fact)
- , fMutex("SkResourceCache") {}
+ : SkResourceCache(fact) {}
 
 SkSynchronizedResourceCache::SkSynchronizedResourceCache(size_t byteLimit)
- : SkResourceCache(byteLimit)
- , fMutex("SkResourceCache") {}
+ : SkResourceCache(byteLimit) {}
 
 SkSynchronizedResourceCache::~SkSynchronizedResourceCache() = default;
 
