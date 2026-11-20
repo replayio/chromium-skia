@@ -31,9 +31,6 @@ inline bool SkRecordReplayEnterLeakMemory(const char* label) {
 // Make a cache's mutex now, on the thread that initializes Skia. See SkGraphics::Init.
 extern void SkRecordReplayInitTypefaceCache();
 extern void SkRecordReplayInitMaskGammaCache();
-#if defined(SK_TYPEFACE_FACTORY_FREETYPE)
-extern void SkRecordReplayInitFreeTypeLock();
-#endif
 
 extern void SkRecordReplayBeginPassThroughEvents();
 extern void SkRecordReplayEndPassThroughEvents();
