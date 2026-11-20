@@ -44,9 +44,9 @@ void SkGraphics::Init() {
         //
         // Only SkStrikeCache's mutex is named, so only it is ordered. The typeface and mask
         // gamma caches have unnamed mutexes, which are ordered only with
-        // RECORD_REPLAY_ORDER_UNNAMED_LOCKS set, as in 108, so pinning them does nothing by
-        // default. FreeType's own lock is named, but nothing creates it: Chromium makes every
-        // typeface through Fontations.
+        // RECORD_REPLAY_ORDER_UNNAMED_LOCKS set, so pinning them does nothing by default.
+        // FreeType's own lock is named, but nothing creates it: Chromium makes every typeface
+        // through Fontations.
         SkStrikeCache::GlobalStrikeCache();
         SkRecordReplayInitTypefaceCache();
         SkRecordReplayInitMaskGammaCache();
