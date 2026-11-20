@@ -44,8 +44,11 @@ public:
     ~SkSynchronizedResourceCache() override;
 
 private:
-    // Named, so taking it is an ordered lock: SkGraphics::Init makes the global cache this
-    // guards, and threads find in it what the recording's threads found. A cache owned by an
+    // Named, so taking it is an ordered lock. Nothing here decides where that lock is made:
+    // the global cache this guards is made on the main thread at startup because Chromium's
+    // content::InitializeSkia ends by setting the cache's single-allocation limit, before
+    // another thread has used Skia. If that call goes, this cache needs an eager
+    // SkGraphics::Init of its own, the way SkImageFilterCache has one. A cache owned by an
     // SkSharedContext gets its own ordered lock wherever that context is made, which nothing
     // pins; no Chromium build makes one today.
     mutable SkMutex fMutex{"SkResourceCache"};
