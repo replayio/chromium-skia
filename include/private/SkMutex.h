@@ -22,19 +22,19 @@
  * go/cstyle#Disallowed_Stdlib
  */
 
-// A mutex made in a process that's being recorded or replayed, while its events are recorded, is
-// taken by threads in the same order when replaying as when recording: Skia's caches are shared
-// between threads, and what a thread finds in one decides what it does next. Nonzero is the
-// driver's ordered lock for a mutex made now without a name, which then stands in for the
-// semaphore; zero where nothing is recorded.
-extern int SkRecordReplayNewMutexId();
+// A mutex given a name is taken by threads in the same order when replaying as when recording,
+// which is what the shared caches behind those names need: what a thread finds in one decides
+// what it does next. Ordering is opt-in by name, as it is for Chromium's base::Lock, and a mutex
+// made without a name keeps its semaphore. The driver records which thread acquires an ordered
+// lock, so ordering a mutex that threads reach by racing, holding no lock of their own, would
+// leave a replay waiting for a thread that never arrives.
 extern int SkRecordReplayCreateOrderedLock(const char* ordered_name);
 extern void SkRecordReplayOrderedLock(int lock);
 extern void SkRecordReplayOrderedUnlock(int lock);
 
 class SK_CAPABILITY("mutex") SkMutex {
 public:
-    SkMutex() : fOrderedLockId(SkRecordReplayNewMutexId()) {}
+    constexpr SkMutex() = default;
     SkMutex(const char* ordered_name) {
       fOrderedLockId = SkRecordReplayCreateOrderedLock(ordered_name);
     }

@@ -106,8 +106,6 @@ static SkMutex& typeface_cache_mutex() {
     return mutex;
 }
 
-void SkRecordReplayInitTypefaceCache() { (void)typeface_cache_mutex(); }
-
 void SkTypefaceCache::Add(sk_sp<SkTypeface> face) {
     SkAutoMutexExclusive ama(typeface_cache_mutex());
     Get().add(std::move(face));

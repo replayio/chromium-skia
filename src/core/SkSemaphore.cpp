@@ -9,8 +9,6 @@
 
 #include "include/private/SkFeatures.h" // IWYU pragma: keep
 
-#include <stdlib.h>
-
 #ifndef _WIN32
 #include <dlfcn.h>
 #else
@@ -36,39 +34,6 @@ int SkRecordReplayCreateOrderedLock(const char* ordered_name) {
     return reinterpret_cast<int(*)(const char*)>(fnptr)(ordered_name);
   }
   return 0;
-}
-
-// Whether the driver's function |name| is there and returns true.
-static bool RecordReplayQuery(void*& fnptr, const char* name) {
-  if (!fnptr) {
-    fnptr = LookupRecordReplaySymbol(name);
-  }
-  return fnptr != reinterpret_cast<void*>(1) && reinterpret_cast<bool(*)()>(fnptr)();
-}
-
-int SkRecordReplayNewMutexId() {
-  // The driver is loaded before this library's first mutex is made in a process that's
-  // recorded, and the engine answers for it in one that's replayed.
-  static void* attach;
-  if (!attach) {
-    attach = LookupRecordReplaySymbol("RecordReplayAttach");
-  }
-  if (attach == reinterpret_cast<void*>(1)) {
-    return 0;
-  }
-  // As for base::Lock: mutexes without a name are ordered only with
-  // RECORD_REPLAY_ORDER_UNNAMED_LOCKS set.
-  static const bool only_named = !getenv("RECORD_REPLAY_ORDER_UNNAMED_LOCKS");
-  if (only_named) {
-    return 0;
-  }
-  static void* events_disallowed;
-  static void* events_passed_through;
-  if (RecordReplayQuery(events_disallowed, "RecordReplayAreEventsDisallowed") ||
-      RecordReplayQuery(events_passed_through, "RecordReplayAreEventsPassedThrough")) {
-    return 0;
-  }
-  return SkRecordReplayCreateOrderedLock("SkMutex");
 }
 
 void SkRecordReplayOrderedLock(int lock) {

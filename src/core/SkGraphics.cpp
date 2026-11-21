@@ -38,18 +38,15 @@ void SkGraphics::Init() {
         SkImageFilterCache::Get();
     }
     if (SkRecordReplayIsRecordingOrReplaying("eager-initialization", "SkFontCaches")) {
-        // The same for the caches a glyph is drawn through: a page's first text draw reaches
-        // them from a raster worker, the compositor or the browser, and a strike found on one
-        // side and missed on the other sends that thread somewhere else.
+        // The same for the cache a glyph is drawn through: a page's first text draw reaches it
+        // from a raster worker, the compositor or the browser, and a strike found on one side
+        // and missed on the other sends that thread somewhere else.
         //
-        // Only SkStrikeCache's mutex is named, so only it is ordered. The typeface and mask
-        // gamma caches have unnamed mutexes, which are ordered only with
-        // RECORD_REPLAY_ORDER_UNNAMED_LOCKS set, so pinning them does nothing by default.
-        // FreeType's own lock is named, but nothing creates it: Chromium makes every typeface
-        // through Fontations.
+        // The strike cache is the one with a named mutex, and so the one worth making here.
+        // The typeface and mask gamma caches are taken under mutexes with no name and are not
+        // ordered at all, as in 108. FreeType's lock is named, but nothing creates it, because
+        // Chromium makes every typeface through Fontations.
         SkStrikeCache::GlobalStrikeCache();
-        SkRecordReplayInitTypefaceCache();
-        SkRecordReplayInitMaskGammaCache();
     }
 }
 
