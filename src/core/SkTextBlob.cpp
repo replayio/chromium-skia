@@ -147,6 +147,9 @@ void SkTextBlob::RunRecord::grow(uint32_t count) {
 static uint32_t next_id() {
     static std::atomic<uint32_t> nextID{1};
     uint32_t id;
+    if (SkRecordReplayTakeIsolatedId(&id)) {
+        return id;
+    }
     do {
         id = nextID.fetch_add(1, std::memory_order_relaxed);
     } while (id == SK_InvalidGenID);

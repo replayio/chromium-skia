@@ -14,6 +14,7 @@
 
 #include "include/private/SkNoncopyable.h"
 #include "include/private/SkTemplates.h"
+#include "src/core/SkRecordReplay.h"
 
 #include <atomic>
 #include <cstdint>
@@ -64,6 +65,10 @@ public:
     }
 
     static void AddedToCache(const SkPicture* pic) {
+        // See SkImage_Base::notifyAddedToRasterCache().
+        if (SkRecordReplayInIsolatedDraw()) {
+            return;
+        }
         if (pic) {
             pic->fAddedToCache.store(true);
         }

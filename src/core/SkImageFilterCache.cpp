@@ -50,8 +50,9 @@ class CacheImpl : public SkImageFilterCache {
 public:
     typedef SkImageFilterCacheKey Key;
     // Only the Get() singleton is purged by ~SkImageFilter_Base, so only it marks its filters.
-    CacheImpl(size_t maxBytes, bool isGlobal)
-        : fMaxBytes(maxBytes), fCurrentBytes(0), fIsGlobal(isGlobal) { }
+    CacheImpl(size_t maxBytes, bool isGlobal, bool recordReplayOrdered = true)
+        : fMaxBytes(maxBytes), fCurrentBytes(0), fIsGlobal(isGlobal)
+        , fMutex(recordReplayOrdered ? "SkImageFilterCache" : nullptr) { }
     ~CacheImpl() override {
         fLookup.foreach([&](Value* v) { delete v; });
     }
@@ -207,7 +208,7 @@ private:
     size_t                                              fMaxBytes;
     size_t                                              fCurrentBytes;
     bool                                                fIsGlobal;
-    mutable SkMutex                                     fMutex{"SkImageFilterCache"};
+    mutable SkMutex                                     fMutex;
 };
 
 } // namespace
@@ -219,6 +220,20 @@ sk_sp<SkImageFilterCache> SkImageFilterCache::Create(size_t maxBytes) {
 sk_sp<SkImageFilterCache> SkImageFilterCache::Get(CreateIfNecessary createIfNecessary) {
     static SkOnce once;
     static SkImageFilterCache* cache = nullptr;
+
+    // Replay's in-process draws run with recorded events disallowed, which skips
+    // the global cache's ordered lock, and recorded threads must not see what
+    // they cache. They get a cache of their own, with a plain mutex and filters
+    // that aren't marked as cached.
+    if (SkRecordReplayInIsolatedDraw()) {
+        static SkOnce recordReplayIsolatedOnce;
+        static SkImageFilterCache* recordReplayIsolatedCache;
+        recordReplayIsolatedOnce([] {
+            recordReplayIsolatedCache = new CacheImpl(kDefaultCacheSize, /*isGlobal=*/false,
+                                                      /*recordReplayOrdered=*/false);
+        });
+        return sk_ref_sp(recordReplayIsolatedCache);
+    }
 
     if (createIfNecessary == CreateIfNecessary::kNo) {
         return sk_ref_sp(cache);

@@ -12,13 +12,15 @@
 #include "src/core/SkRecordReplay.h"
 
 SkCachedData::SkCachedData(void* data, size_t size)
-        : fMutex("SkCachedData.fMutex")
+        // Replay's in-process draws can't create ordered locks.
+        : fMutex(SkRecordReplayInIsolatedDraw() ? nullptr : "SkCachedData.fMutex")
         , fStorage(std::in_place_type<MallocStorage>, data)
         , fData(data)
         , fSize(size) {}
 
 SkCachedData::SkCachedData(size_t size, SkDiscardableMemory* dm)
-        : fMutex("SkCachedData.fMutex")
+        // Replay's in-process draws can't create ordered locks.
+        : fMutex(SkRecordReplayInIsolatedDraw() ? nullptr : "SkCachedData.fMutex")
         , fStorage(std::in_place_type<DiscardableStorage>, dm)
         , fData(dm ? dm->data() : nullptr)
         , fSize(size) {}
