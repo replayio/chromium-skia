@@ -119,6 +119,14 @@ SkResourceCache::SkResourceCache(size_t byteLimit)
     fTotalByteLimit = byteLimit;
 }
 
+SkResourceCache::SkResourceCache(size_t byteLimit, RecordReplayIsolated)
+        : fPurgeSharedIDInbox(SK_InvalidUniqueID,
+                              SkMessageBus<PurgeSharedIDMessage, uint32_t>::Inbox::
+                                      RecordReplayUnregistered()) {
+    this->init();
+    fTotalByteLimit = byteLimit;
+}
+
 SkResourceCache::~SkResourceCache() {
     Rec* rec = fHead;
     while (rec) {
@@ -488,6 +496,16 @@ void SkResourceCache::checkMessages() {
 ///////////////////////////////////////////////////////////////////////////////
 
 static SkSynchronizedResourceCache* get_cache() {
+    // Replay's in-process draws, which run with recorded events disallowed,
+    // use a cache of their own, which only they use: what they cache must
+    // not change what recorded threads find in the global cache, and nothing
+    // they cache may post purge messages to recorded threads' inboxes.
+    if (SkRecordReplayInIsolatedDraw()) {
+        static SkSynchronizedResourceCache* recordReplayIsolatedCache =
+                new SkSynchronizedResourceCache(SK_DEFAULT_IMAGE_CACHE_LIMIT,
+                                                SkResourceCache::RecordReplayIsolated());
+        return recordReplayIsolatedCache;
+    }
 #if defined(SK_USE_DISCARDABLE_SCALEDIMAGECACHE)
     static SkSynchronizedResourceCache* gResourceCache =
             new SkSynchronizedResourceCache(SkDiscardableMemory::Create);

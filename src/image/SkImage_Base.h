@@ -17,6 +17,7 @@
 #include "include/private/SkTDArray.h"
 #include "src/capture/SkCaptureManager.h"
 #include "src/core/SkMipmap.h"
+#include "src/core/SkRecordReplay.h"
 
 #include <atomic>
 #include <cstddef>
@@ -167,6 +168,11 @@ public:
     // Call when this image is part of the key to a resourcecache entry. This allows the cache
     // to know automatically those entries can be purged when this SkImage deleted.
     virtual void notifyAddedToRasterCache() const {
+        // Replay's in-process draws cache only in caches of their own,
+        // and the image must not post purge messages to the global cache's inbox.
+        if (SkRecordReplayInIsolatedDraw()) {
+            return;
+        }
         fAddedToRasterCache.store(true);
     }
 

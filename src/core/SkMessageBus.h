@@ -46,6 +46,10 @@ public:
     class Inbox {
     public:
         Inbox(IDType uniqueID);
+        // An inbox that isn't registered with the bus and receives nothing, for
+        // caches that Replay's in-process draws use (see SkResourceCache).
+        struct RecordReplayUnregistered {};
+        Inbox(IDType uniqueID, RecordReplayUnregistered);
         ~Inbox();
 
         IDType uniqueID() const { return fUniqueID; }
@@ -57,6 +61,7 @@ public:
         skia_private::TArray<Message> fMessages;
         SkMutex                       fMessagesMutex;
         const IDType                  fUniqueID;
+        const bool                    fRecordReplayRegistered = true;
 
         friend class SkMessageBus;
         void receive(Message m);  // SkMessageBus is a friend only to call this.
@@ -97,7 +102,15 @@ SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::Inbox(IDType uniqueI
 }
 
 template <typename Message, typename IDType, bool AllowCopyableMessage>
+SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::Inbox(IDType uniqueID,
+                                                                  RecordReplayUnregistered)
+        : fUniqueID(uniqueID), fRecordReplayRegistered(false) {}
+
+template <typename Message, typename IDType, bool AllowCopyableMessage>
 SkMessageBus<Message, IDType, AllowCopyableMessage>::Inbox::~Inbox() {
+    if (!fRecordReplayRegistered) {
+        return;
+    }
     // Remove ourselves from the corresponding message bus.
     auto* bus = SkMessageBus<Message, IDType, AllowCopyableMessage>::Get();
     SkAutoMutexExclusive lock(bus->fInboxesMutex);

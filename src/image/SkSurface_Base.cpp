@@ -21,6 +21,7 @@
 #include "include/core/SkSurface.h"
 #include "src/capture/SkCaptureCanvas.h"
 #include "src/capture/SkCaptureManager.h"
+#include "src/core/SkRecordReplay.h"
 #include "src/image/SkRescaleAndReadPixels.h"
 
 #include <atomic>
@@ -134,6 +135,10 @@ bool SkSurface_Base::aboutToDraw(ContentChangeMode mode) {
 uint32_t SkSurface_Base::newGenerationID() {
     SkASSERT(!fOwnedBaseCanvas || fOwnedBaseCanvas->getSurface() == this);
     static std::atomic<uint32_t> nextID{1};
+    uint32_t id;
+    if (SkRecordReplayTakeIsolatedId(&id)) {
+        return id;
+    }
     return nextID.fetch_add(1, std::memory_order_relaxed);
 }
 

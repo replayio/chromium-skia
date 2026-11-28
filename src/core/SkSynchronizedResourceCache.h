@@ -41,6 +41,8 @@ public:
 
     SkSynchronizedResourceCache(DiscardableFactory);
     explicit SkSynchronizedResourceCache(size_t byteLimit);
+    // For Replay's in-process draws, with a mutex that isn't ordered.
+    SkSynchronizedResourceCache(size_t byteLimit, RecordReplayIsolated);
     ~SkSynchronizedResourceCache() override;
 
 private:
@@ -51,6 +53,6 @@ private:
     // SkGraphics::Init of its own, the way SkImageFilterCache has one. A cache owned by an
     // SkSharedContext gets its own ordered lock wherever that context is made, which nothing
     // pins; no Chromium build makes one today.
-    mutable SkMutex fMutex{"SkResourceCache"};
+    mutable SkMutex fMutex;
 };
 #endif
